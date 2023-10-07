@@ -1,0 +1,3 @@
+[submodule "infinitydb"]
+	path = infinitydb
+	url = https://github.com/infinitydb/infinitydb

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <base href=".">
+        <!--title>Boilerbay Machine Learning Dashboard</title-->
+        <link rel="stylesheet" type="text/css" href="ml_dashboard.css">
+
+        <!--link rel="icon" href="figure_40_cyanobacteria_dolichospermum_circinale_usgs_ofr20151164_ann_st_amand_l.webp" type="image/x-icon"-->
+    </head>
+    <body>
+        <header><!--h1>AI Dashboard</h1--></header>
+        <nav>
+            <ul>
+                <li><a href="">Labeling</a></li>
+                <li><a href="">Clustering</a></li>
+                <li><a href="">Models</a></li>
+                <li><label id="connection_status">Not logged in.</label></li>
+                <li><button id="login" class="login-button" onclick="document.getElementById('loginpane').style.display='block'">Login</button></li>
+            </ul>
+
+        </nav>
+
+        <div id="loginpane" class="modal">
+            <div class="modal-content animate">
+                <label>Server:
+                    <input class="modal-input" id="server_url" autocomplete="https://localhost:37411"/>
+                </label>
+                <label>User
+                    <input id="username" class="modal-input">
+                </label>
+                <label>Password
+                    <input id="password" type="password" class="modal-input">
+                </label>
+                <button class="modal-button" id="connect">Connect</button>
+                <button class="modal-button cancelbtn" id="cancel" onclick="document.getElementById('loginpane').style.display='none'">Cancel</button>
+            </div>
+        </div>
+
+        <div>
+            <label>Label Set:
+                <select id="image_set_select">
+                    <option value="1">chlorella</option>
+                    <option value="2">anabaena</option>
+                    <option value="3">tetraselmis</option>
+                </select>
+            </label>
+            <label>View Width: 
+                <input id="view_width" autocomplete="10000" />
+            </label>
+            <button id="go">Go</button>
+            <button id="refresh" style="margin-left:40px">Refresh</button>
+            </div>
+        </div>
+
+        <div style="float:left;width:20%;">
+            <select id="image_id_select" size="10">
+                <option value="1">Image 1</option>
+                <option>Image 2</option>
+            </select>
+
+        </div>
+
+        <div style="float:right;width:80%;">
+            <canvas id="canvas" width="800" height="600" style="padding-top:10px;"></canvas>
+        </div>
+        <!--p style="color:rgb(0, 17, 255);text-align:center;">{{ seq }}</p-->
+        <!--script type="module" src="intelliwaterai/infinitydb/access.js"></script-->
+        <script type="module" src="labeling.js"></script>
+
+    </body>
+</html>
