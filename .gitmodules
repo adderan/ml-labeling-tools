@@ -1,3 +1,6 @@
 [submodule "infinitydb"]
 	path = infinitydb
 	url = https://github.com/infinitydb/infinitydb
+[submodule "js-ui-elements"]
+	path = js-ui-elements
+	url = https://github.com/adderan/js-ui-elements

@@ -38,31 +38,41 @@
         </div>
 
         <div>
-            <label>Label Set:
+            <label>Image Set: 
                 <select id="image_set_select">
-                    <option value="1">chlorella</option>
-                    <option value="2">anabaena</option>
-                    <option value="3">tetraselmis</option>
                 </select>
             </label>
-            <label>View Width: 
-                <input id="view_width" autocomplete="10000" />
-            </label>
-            <button id="go">Go</button>
+            <label>Label Set: 
+                <select id="label_set_select">
+                </select>
+            <button id="next">Next</button>
+            <button id="prev">Prev</button>
+            <button id="save">Save</button>
+            <button id="clear">Clear</button>
             <button id="refresh" style="margin-left:40px">Refresh</button>
             </div>
         </div>
+        <div>
+            <label>Label to Apply:
+                <input id="label_to_apply">
+                </input>
+            </label>
 
-        <div style="float:left;width:20%;">
-            <select id="image_id_select" size="10">
-                <option value="1">Image 1</option>
-                <option>Image 2</option>
+        </div>
+
+        <div style="float:left;width:50%;">
+            <select id="image_id_select" size="50" class="idselect">
             </select>
 
         </div>
 
-        <div style="float:right;width:80%;">
-            <canvas id="canvas" width="800" height="600" style="padding-top:10px;"></canvas>
+        <div>
+            <select id="label_editor"></select>
+
+        </div>
+
+        <div style="float:right;width:50%;">
+            <canvas id="canvas" width="800" height="600" ></canvas>
         </div>
         <!--p style="color:rgb(0, 17, 255);text-align:center;">{{ seq }}</p-->
         <!--script type="module" src="intelliwaterai/infinitydb/access.js"></script-->
