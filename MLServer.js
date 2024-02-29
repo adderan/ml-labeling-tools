@@ -28,8 +28,18 @@ export class MLServer extends idb.Accessor {
         return label_sets;
     }
 
-    async get_image_labels(label_set, image_id) {
+    async get_image_labels(image_set, image_id) {
+        let [success, result, content_type] = await this.execute_query(
+            [INTERFACE, "get_labels_by_image_id"],
+            {
+                "_image_set": image_set,
+                "_image_id": image_id
+            }
 
+        )
+
+        let labels = idb.flattenToLists(result);
+        return labels;
     }
 
     async get_image(image_set, image_id) {
@@ -41,10 +51,6 @@ export class MLServer extends idb.Accessor {
                 "_image_id": image_id
             }
         )
-        //let idbBlob = new idb.Blob();
-        //idbBlob.parseFromBlobStructure(result);
-        //console.log(idbBlob);
-        //let blob = new Blob(idbBlob.v, {type: idbBlob.contentType});
 
         return result;
     }

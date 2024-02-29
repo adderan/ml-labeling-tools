@@ -6,7 +6,7 @@ var goButton = document.getElementById("go")
 
 /** @type {HTMLButtonElement} */
 var connectButton = document.getElementById('connect');
-connectButton.addEventListener('click', connect_server);
+connectButton.addEventListener('click', connectServer);
 
 
 var server = null;
@@ -38,12 +38,17 @@ image_selector.addEventListener('change', changeCurrentImage);
 
 var current_image_set = null;
 var current_image_id = null;
-var current_image = null;
+var current_image = new Image();
 //width of the image on the screen
 var display_width = 400;
 //current box the user is drawing
 var box_x0, box_y0, box_x1, box_y1;
 var current_image_labels = [];
+
+current_image.onload = updateCanvas;
+current_image.onerror = function(event) {
+    console.log(event);
+}
 
 //canvas events
 canvas.addEventListener('mousedown', beginDrawBox);
@@ -101,6 +106,11 @@ function updateCanvas() {
 
     context.strokeRect(box_x0, box_y0, box_x1-box_x0, box_y1-box_y0);
 
+    for (let label of current_image_labels) {
+        let [label_set, classname, x0, y0, x1, y1] = label;
+        context.strokeRect(x0, y0, x1-x0, y1-y0);
+    }
+
 }
 
 
@@ -111,13 +121,9 @@ async function changeCurrentImage() {
     let image_blob = await server.get_image(current_image_set, current_image_id);
 
     let image_url = URL.createObjectURL(image_blob);
-    let image = new Image();
-    image.src = image_url;
-    
-    image.onload = function() {
-        current_image = image;
-        updateCanvas();
-    }
+    current_image.src = image_url;
+
+    current_image_labels = await server.get_image_labels(current_image_set, current_image_id);
 
 }
 
@@ -138,7 +144,7 @@ async function updateSelector(element_id, new_items) {
 
 }
 
-function get_image_name(image_id) {
+function getImageName(image_id) {
     let image_name = [];
     for (let component of image_id) {
         if (component instanceof Date) {
@@ -156,7 +162,7 @@ async function updateImageSelector() {
     let image_ids = await server.get_image_ids(image_set);
     let image_names = [];
     for (let image_id of image_ids) {
-        let image_name = get_image_name(image_id);
+        let image_name = getImageName(image_id);
         image_name_to_id[image_name] = image_id;
         image_names.push(image_name);
     }
@@ -173,9 +179,11 @@ async function setLoginStatus() {
         success = await server.head();
     }
 
+    console.log(success);
+
     if (success) {
         connection_status.innerHTML = `Connected to ${server.server_url}`;
-        login_button.onclick = logout_server;
+        login_button.onclick = logoutServer;
         login_button.innerHTML = 'Logout';
     }
     else {
@@ -190,13 +198,13 @@ async function setLoginStatus() {
 
 }
 
-async function connect_server() {
+async function connectServer() {
     let server_field = document.getElementById("server_url");
     let user_field = document.getElementById("username");
     let password_field = document.getElementById("password");
     let connection_status = document.getElementById("connection_status");
 
-    server_url = `${server_field.value}:37411/infinitydb/data`
+    server_url = `${server_field.value}/infinitydb/data`
     server = new MLServer(server_url, "ai/labels", user_field.value, password_field.value)
 
     
@@ -209,19 +217,19 @@ async function connect_server() {
     let login_pane = document.getElementById("loginpane")
     login_pane.style.display = "none";
 
-    set_login_status();
+    setLoginStatus();
 
 }
 
 
-function show_loginpane() {
+function showLoginpane() {
     document.getElementById('loginpane').style.display='block';
 }
-function hide_loginpane() {
+function hideLoginpane() {
     document.getElementById('loginpane').style.display='none';
 }
 
-function logout_server() {
+function logoutServer() {
     sessionStorage.removeItem('username');
     sessionStorage.removeItem('password');
     sessionStorage.removeItem('server_url');
@@ -234,7 +242,7 @@ function logout_server() {
     login_button.innerHTML = "Login";
 }
 
-function set_disconnected_status() {
+function setDisconnectedStatus() {
     document.getElementById("connection_status").innerHTML = "Must login first."
 }
 
