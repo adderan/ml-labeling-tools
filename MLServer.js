@@ -12,7 +12,6 @@ export class MLServer extends idb.Accessor {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_image_sets"]
         );
-        console.log(success, result, content_type);
 
         let image_sets = idb.flattenToLists(result["_image_set"]);
 
@@ -39,11 +38,21 @@ export class MLServer extends idb.Accessor {
         )
 
         let labels = idb.flattenToLists(result);
-        return labels;
+        console.log(labels);
+        let labels2 = [];
+        for (let label of labels) {
+            let [label_set, classname, x0, y0, x1, y1] = label;
+            let xmin = Math.min(x0, x1);
+            let xmax = Math.max(x0, x1);
+            let ymin = Math.min(y0, y1);
+            let ymax = Math.max(y0, y1);
+            labels2.push([label_set, classname, xmin, ymin, xmax, ymax]);
+        }
+        console.log(labels2);
+        return labels2;
     }
 
     async get_image(image_set, image_id) {
-        console.log(image_id);
         let [success, result, content_type] = await this.execute_get_blob_query(
             [INTERFACE, "get_image"],
             {

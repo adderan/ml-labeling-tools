@@ -39,16 +39,17 @@ image_selector.addEventListener('change', changeCurrentImage);
 var current_image_set = null;
 var current_image_id = null;
 var current_image = new Image();
+current_image.onload = updateCanvas;
 //width of the image on the screen
 var display_width = 400;
+var display_height = null;
 //current box the user is drawing
 var box_x0, box_y0, box_x1, box_y1;
 var current_image_labels = [];
 
-current_image.onload = updateCanvas;
-current_image.onerror = function(event) {
-    console.log(event);
-}
+var box_colors = ["blue", "green", "yellow", "purple", "red"];
+var class_color_key = {};
+
 
 //canvas events
 canvas.addEventListener('mousedown', beginDrawBox);
@@ -97,19 +98,36 @@ function updateCanvas() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (current_image != null) {
         let scale = display_width / current_image.width;
-        let display_height = scale * current_image.height;
+        display_height = scale * current_image.height;
 
-        canvas.width = display_width;
-        canvas.height = display_height;
+        canvas.width = display_width + 10;
+        canvas.height = display_height + 10;
         context.drawImage(current_image, 0, 0, display_width, display_height);
     }
 
+    context.lineWidth = 2;
+    context.setLineDash([5, 5]);
     context.strokeRect(box_x0, box_y0, box_x1-box_x0, box_y1-box_y0);
 
     for (let label of current_image_labels) {
-        let [label_set, classname, x0, y0, x1, y1] = label;
-        context.strokeRect(x0, y0, x1-x0, y1-y0);
+        let [label_set, classname, xmin, ymin, xmax, ymax] = label;
+        if (!(classname in class_color_key)) {
+            class_color_key[classname] = box_colors.pop();
+        }
+        context.lineWidth = 2;
+        context.setLineDash([]);
+        context.strokeStyle = class_color_key[classname];
+        [xmin, ymin] = toCanvasCoordinates(current_image, xmin, ymin);
+        [xmax, ymax] = toCanvasCoordinates(current_image, xmax, ymax);
+        context.strokeRect(xmin, ymin, xmax-xmin, ymax-ymin);
     }
+
+}
+
+function toCanvasCoordinates(image, x0, y0) {
+    let xp = x0 * display_width / image.width;
+    let yp = y0 * display_height / image.height;
+    return [xp, yp];
 
 }
 
@@ -124,6 +142,7 @@ async function changeCurrentImage() {
     current_image.src = image_url;
 
     current_image_labels = await server.get_image_labels(current_image_set, current_image_id);
+    updateCanvas();
 
 }
 
