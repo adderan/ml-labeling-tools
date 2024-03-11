@@ -42,14 +42,25 @@
                 <select id="image_set_select">
                 </select>
             </label>
-            <label>Label Set: 
-                <select id="label_set_select">
+            <label>Source Label Set 
+                <select id="source_label_set_select">
                 </select>
-            <button id="next">Next</button>
-            <button id="prev">Prev</button>
-            <button id="save">Save</button>
+            </label>
+            <label>Target Label Set
+                <select id="target_label_set_select">
+                </select>
+            </label>
+            <button id="save">Save Labels</button>
             <button id="clear">Clear</button>
+            <button id="draw_box">Draw Box</button>
+            <button id="draw_mask">Draw Mask</button>
             <button id="refresh" style="margin-left:40px">Refresh</button>
+
+            </div>
+            <div style="float:none">
+                <button id="previous"><</button>
+                <input id="image_num" type="number" style="width:5em"></input>
+                <button id="next">></button>
             </div>
         </div>
         <div>
@@ -72,6 +83,7 @@
         <!--p style="color:rgb(0, 17, 255);text-align:center;">{{ seq }}</p-->
         <!--script type="module" src="intelliwaterai/infinitydb/access.js"></script-->
         <script type="module" src="labeling.js"></script>
+
 
     </body>
 </html>

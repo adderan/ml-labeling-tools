@@ -24,12 +24,19 @@ var context = canvas.getContext("2d");
 var refreshButton = document.getElementById("refresh");
 refreshButton.addEventListener('click', refreshInterface);
 
+/** @type {HTMLButtonElement} */
+var draw_box_button = document.getElementById("draw_box");
+draw_box_button.addEventListener('click', enterDrawBoxMode);
+
+
 /** @type {HTMLSelectElement} */
 var image_set_selector = document.getElementById("image_set_select");
 image_set_selector.addEventListener('change', updateImageSelector);
 
 /** @type {HTMLSelectElement} */
-var label_set_selector = document.getElementById("label_set_select");
+var source_label_set_selector = document.getElementById("source_label_set_select");
+/** @type {HTMLSelectElement} */
+var target_label_set_selector = document.getElementById("target_label_set_select");
 
 
 /** @type {HTMLSelectElement} */
@@ -44,29 +51,31 @@ current_image.onload = updateCanvas;
 var display_width = 400;
 var display_height = null;
 //current box the user is drawing
+var drawing_box = false;
 var box_x0, box_y0, box_x1, box_y1;
+
 var current_image_labels = [];
 
-var box_colors = ["blue", "green", "yellow", "purple", "red"];
+var box_colors = ["blue", "green", "purple", "red"];
 var class_color_key = {};
 
 
 //canvas events
-canvas.addEventListener('mousedown', beginDrawBox);
 
 var image_name_to_id = {};
 
-refreshInterface();
+await refreshInterface();
 
 
 async function refreshInterface() {
-    setLoginStatus();
+    await setLoginStatus();
 
     let image_sets = await server.get_image_sets();
-    updateSelector("image_set_select", image_sets);
+    updateSelector(image_set_selector, image_sets);
 
     let label_sets = await server.get_label_sets();
-    updateSelector("label_set_select", label_sets);
+    updateSelector(source_label_set_selector, label_sets);
+
 
     updateImageSelector();
 }
@@ -75,7 +84,22 @@ async function updateCurrentLabels() {
 
 }
 
+
+
+//------- Drawing Boxes -------------------------
+
+function enterDrawBoxMode(event) {
+    canvas.addEventListener('mousedown', beginDrawBox);
+    canvas.style.cursor = 'se-resize';
+    canvas.addEventListener('click', exitDrawBoxMode);
+}
+function exitDrawBoxMode(event) {
+    canvas.removeEventListener('click', beginDrawBox);
+    canvas.style.cursor = 'auto';
+}
+
 function beginDrawBox(event) {
+    drawing_box = true;
     box_x0 = event.offsetX;
     box_y0 = event.offsetY;
     box_x1 = event.offsetX;
@@ -93,6 +117,8 @@ function endDrawBox(event) {
     canvas.removeEventListener('mouseup', endDrawBox);
 }
 
+//--------------------------------
+
 function updateCanvas() {
 
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -100,14 +126,18 @@ function updateCanvas() {
         let scale = display_width / current_image.width;
         display_height = scale * current_image.height;
 
-        canvas.width = display_width + 10;
+        canvas.width = canvas.parentElement.clientWidth;
         canvas.height = display_height + 10;
         context.drawImage(current_image, 0, 0, display_width, display_height);
     }
 
     context.lineWidth = 2;
     context.setLineDash([5, 5]);
-    context.strokeRect(box_x0, box_y0, box_x1-box_x0, box_y1-box_y0);
+    if (drawing_box) {
+        context.strokeRect(box_x0, box_y0, box_x1-box_x0, box_y1-box_y0);
+    }
+
+    let textOffset = 100;
 
     for (let label of current_image_labels) {
         let [label_set, classname, xmin, ymin, xmax, ymax] = label;
@@ -120,6 +150,17 @@ function updateCanvas() {
         [xmin, ymin] = toCanvasCoordinates(current_image, xmin, ymin);
         [xmax, ymax] = toCanvasCoordinates(current_image, xmax, ymax);
         context.strokeRect(xmin, ymin, xmax-xmin, ymax-ymin);
+
+        context.moveTo(xmax, ymin);
+        context.lineTo(display_width + 40, textOffset);
+        context.setLineDash([5, 5]);
+        context.strokeStyle = class_color_key[classname];
+
+        context.stroke();
+        context.setLineDash([]);
+        context.font = "30px serif";
+        context.fillText(`${classname}`, display_width + 40, textOffset + 5);
+        textOffset += 100;
     }
 
 }
@@ -142,18 +183,16 @@ async function changeCurrentImage() {
     current_image.src = image_url;
 
     current_image_labels = await server.get_image_labels(current_image_set, current_image_id);
+    drawing_box = false;
+
     updateCanvas();
 
 }
 
-async function updateSelector(element_id, new_items) {
-    /** @type {HTMLSelectElement} */
-    let selector = document.getElementById(element_id);
-
+function updateSelector(selector, new_items) {
     for (let i = selector.options.length; i >= 0; i--) {
         selector.options.remove(i);
     }
-    new_items = await new_items;
 
     for (let item of new_items) {
         selector.options.add(new Option(item, item));
@@ -186,7 +225,7 @@ async function updateImageSelector() {
         image_names.push(image_name);
     }
     
-    updateSelector("image_id_select", image_names);
+    updateSelector(image_selector, image_names);
     
 }
 
@@ -197,8 +236,6 @@ async function setLoginStatus() {
     if (server) {
         success = await server.head();
     }
-
-    console.log(success);
 
     if (success) {
         connection_status.innerHTML = `Connected to ${server.server_url}`;

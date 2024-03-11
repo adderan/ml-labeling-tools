@@ -23,7 +23,7 @@ export class MLServer extends idb.Accessor {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_label_sets"]
         );
-        let label_sets = idb.flattenToLists(result);
+        let label_sets = idb.flattenToLists(result["_label_set"]);
         return label_sets;
     }
 
@@ -38,7 +38,6 @@ export class MLServer extends idb.Accessor {
         )
 
         let labels = idb.flattenToLists(result);
-        console.log(labels);
         let labels2 = [];
         for (let label of labels) {
             let [label_set, classname, x0, y0, x1, y1] = label;
@@ -48,7 +47,6 @@ export class MLServer extends idb.Accessor {
             let ymax = Math.max(y0, y1);
             labels2.push([label_set, classname, xmin, ymin, xmax, ymax]);
         }
-        console.log(labels2);
         return labels2;
     }
 
