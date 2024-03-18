@@ -42,12 +42,10 @@
                 <select id="image_set_select">
                 </select>
             </label>
-            <label>Source Label Set 
-                <select id="source_label_set_select">
-                </select>
-            </label>
+            <div id="source_label_set_select">
+            </div>
             <label>Target Label Set
-                <select id="target_label_set_select">
+                <input id="target_label_set">
                 </select>
             </label>
             <button id="save">Save Labels</button>
@@ -57,18 +55,6 @@
             <button id="refresh" style="margin-left:40px">Refresh</button>
 
             </div>
-            <div style="float:none">
-                <button id="previous"><</button>
-                <input id="image_num" type="number" style="width:5em"></input>
-                <button id="next">></button>
-            </div>
-        </div>
-        <div>
-            <label>Label to Apply:
-                <input id="label_to_apply">
-                </input>
-            </label>
-
         </div>
 
         <div style="float:left;width:30%;">
@@ -77,8 +63,9 @@
 
         </div>
 
-        <div style="float:right;width:70%;">
-            <canvas id="canvas" width="800" height="600" ></canvas>
+        <div style="float:right;width:70%; position:relative;">
+            <canvas id="canvas" width="800" height="600" style="position:absolute;z-index:-1;background-color:white;"></canvas>
+            <input id="class_input" style="position:absolute; visibility:hidden;" placeholder="class name"></input>
         </div>
         <!--p style="color:rgb(0, 17, 255);text-align:center;">{{ seq }}</p-->
         <!--script type="module" src="intelliwaterai/infinitydb/access.js"></script-->

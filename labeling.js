@@ -1,4 +1,5 @@
 import {MLServer} from "./MLServer.js";
+import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
 /** @type {HTMLButtonElement} */
 var goButton = document.getElementById("go")
@@ -33,16 +34,28 @@ draw_box_button.addEventListener('click', enterDrawBoxMode);
 var image_set_selector = document.getElementById("image_set_select");
 image_set_selector.addEventListener('change', updateImageSelector);
 
-/** @type {HTMLSelectElement} */
-var source_label_set_selector = document.getElementById("source_label_set_select");
-/** @type {HTMLSelectElement} */
-var target_label_set_selector = document.getElementById("target_label_set_select");
+///** @type {HTMLSelectElement} */
+//var source_label_set_selector = document.getElementById("source_label_set_select");
+var source_label_set_selector = new CheckBoxList(document.getElementById("source_label_set_select"),
+    "Source Label Sets", null, true);
+var source_label_sets = [];
+
+/** @type {HTMLInputElement} */
+var target_label_set_input = document.getElementById("target_label_set_input");
+
+/** @type {HTMLInputElement} */
+var class_input = document.getElementById("class_input");
+
+/** @type {HTMLButtonElement} */
+var save_button = document.getElementById("save");
+save_button.addEventListener('click', saveLabels);
 
 
 /** @type {HTMLSelectElement} */
 var image_selector = document.getElementById("image_id_select");
 image_selector.addEventListener('change', changeCurrentImage);
 
+var displayed_image_ids = [];
 var current_image_set = null;
 var current_image_id = null;
 var current_image = new Image();
@@ -55,14 +68,11 @@ var drawing_box = false;
 var box_x0, box_y0, box_x1, box_y1;
 
 var current_image_labels = [];
+var labels_buffer = [];
 
 var box_colors = ["blue", "green", "purple", "red"];
 var class_color_key = {};
 
-
-//canvas events
-
-var image_name_to_id = {};
 
 await refreshInterface();
 
@@ -74,13 +84,18 @@ async function refreshInterface() {
     updateSelector(image_set_selector, image_sets);
 
     let label_sets = await server.get_label_sets();
-    updateSelector(source_label_set_selector, label_sets);
+    for (let label_set of label_sets) {
+        source_label_set_selector.add_item(label_set);
+    }
 
 
     updateImageSelector();
 }
 
-async function updateCurrentLabels() {
+async function saveLabels() {
+    for (let label of labels_buffer) {
+        server.write_label(target_label_set_input.value, current_image_id, label);
+    }
 
 }
 
@@ -94,7 +109,7 @@ function enterDrawBoxMode(event) {
     canvas.addEventListener('click', exitDrawBoxMode);
 }
 function exitDrawBoxMode(event) {
-    canvas.removeEventListener('click', beginDrawBox);
+    canvas.removeEventListener('mousedown', beginDrawBox);
     canvas.style.cursor = 'auto';
 }
 
@@ -115,9 +130,40 @@ function adjustBox(event) {
 function endDrawBox(event) {
     canvas.removeEventListener('mousemove', adjustBox);
     canvas.removeEventListener('mouseup', endDrawBox);
+
+    class_input.style.left = `${(box_x1 + box_x0)/2}px`;
+    class_input.style.top = `${(box_y1 + box_y0)/2}px`;
+    class_input.style.visibility = "visible";
+    class_input.focus();
+
+    //class_input.setAttribute("style", `visibility:visible; position:absolute; top:${cy}px; left:${cx}px;`);
+}
+
+class_input.onkeydown = function(event) {
+    if (event.key == 'Escape') {
+        class_input.style.visibility = 'hidden';
+        class_input.blur();
+        exitDrawBoxMode();
+    }
+    else if (event.key == 'Enter') {
+        let classname = class_input.value;
+        let [x0, y0] = fromCanvasCoordinates(current_image, box_x0, box_y0);
+        let [x1, y1] = fromCanvasCoordinates(current_image, box_x1, box_y1);
+        console.log(x0, y0, x1, y1);
+        let new_label = ["default", classname, x0, y0, x1, y1];
+
+        current_image_labels.push(new_label);
+        labels_buffer.push(new_label);
+        exitDrawBoxMode();
+        class_input.style.visibility = "hidden";
+        class_input.blur();
+        updateCanvas();
+    }
 }
 
 //--------------------------------
+
+
 
 function updateCanvas() {
 
@@ -163,6 +209,7 @@ function updateCanvas() {
         textOffset += 100;
     }
 
+
 }
 
 function toCanvasCoordinates(image, x0, y0) {
@@ -172,9 +219,15 @@ function toCanvasCoordinates(image, x0, y0) {
 
 }
 
+function fromCanvasCoordinates(image, xp, yp) {
+    let x0 = xp * image.width / display_width;
+    let y0 = yp * image.width / display_width;
+    return [x0, y0];
+}
+
 
 async function changeCurrentImage() {
-    current_image_id = image_name_to_id[image_selector.value];
+    current_image_id = displayed_image_ids[image_selector.selectedIndex];
     current_image_set = image_set_selector.value;
     
     let image_blob = await server.get_image(current_image_set, current_image_id);
@@ -183,6 +236,7 @@ async function changeCurrentImage() {
     current_image.src = image_url;
 
     current_image_labels = await server.get_image_labels(current_image_set, current_image_id);
+    labels_buffer = [];
     drawing_box = false;
 
     updateCanvas();
@@ -217,11 +271,13 @@ function getImageName(image_id) {
 async function updateImageSelector() {
     let image_set = image_set_selector.value;
     
-    let image_ids = await server.get_image_ids(image_set);
+    displayed_image_ids = await server.get_image_ids(image_set);
     let image_names = [];
-    for (let image_id of image_ids) {
-        let image_name = getImageName(image_id);
-        image_name_to_id[image_name] = image_id;
+    for (let i = 0; i < displayed_image_ids.length; i++) {
+        let image_id = displayed_image_ids[i];
+        let date = image_id[1];
+        let image_num = image_id.slice(2);
+        let image_name = `${i} ${date.toLocaleString()} ${image_num}`;
         image_names.push(image_name);
     }
     
