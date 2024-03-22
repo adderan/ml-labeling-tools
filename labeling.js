@@ -41,7 +41,7 @@ var source_label_set_selector = new CheckBoxList(document.getElementById("source
 var source_label_sets = [];
 
 /** @type {HTMLInputElement} */
-var target_label_set_input = document.getElementById("target_label_set_input");
+var target_label_set_input = document.getElementById("target_label_set");
 
 /** @type {HTMLInputElement} */
 var class_input = document.getElementById("class_input");
@@ -93,13 +93,18 @@ async function refreshInterface() {
 }
 
 async function saveLabels() {
+    console.log(labels_buffer);
     for (let label of labels_buffer) {
-        server.write_label(target_label_set_input.value, current_image_id, label);
+        let [label_set, classname, x0, y0, x1, y1] = label;
+        label = [classname, x0, y0, x1, y1];
+        if (target_label_set_input.value == '') {
+            alert('Enter a target label set');
+            return;
+        }
+        server.set_label(target_label_set_input.value, current_image_set, current_image_id, label);
     }
 
 }
-
-
 
 //------- Drawing Boxes -------------------------
 
@@ -166,6 +171,7 @@ class_input.onkeydown = function(event) {
 
 
 function updateCanvas() {
+    //Function just for rendering the canvas, should not change any state
 
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (current_image != null) {

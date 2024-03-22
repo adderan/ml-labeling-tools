@@ -26,6 +26,20 @@ export class MLServer extends idb.Accessor {
         let label_sets = idb.flattenToLists(result["_label_set"]);
         return label_sets;
     }
+    async set_label(label_set, image_set, image_id, label) {
+        //image_id = idb.unflattenFromLists(image_id.slice(1));
+        console.log(image_set);
+        console.log(image_id);
+        let [success, result, content_type] = await this.execute_query(
+            [INTERFACE, "set_label"],
+            {
+                "_label_set": label_set,
+                "_image_id": image_id,
+                "_image_set": image_set,
+                "_label": label
+            }
+        );
+    }
 
     async get_image_labels(image_set, image_id) {
         let [success, result, content_type] = await this.execute_query(
