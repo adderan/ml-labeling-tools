@@ -1,6 +1,209 @@
 import {MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
+class LabelEditorCanvas {
+    constructor(canvas, image) {
+        this.canvas = canvas;
+
+        /** @type {CanvasRenderingContext2D} */
+        this.context = this.canvas.getContext("2d");
+
+        this.image = image;
+        this.labels = [];
+
+        this.display_width = 400;
+        this.box_colors = ["blue", "green", "purple", "red"];
+        this.class_color_key = {};
+
+        this.box = null;
+
+
+        this.class_input = document.createElement('input');
+        this.class_input.style.position = 'absolute';
+        this.class_input.style.visibility = 'hidden';
+        this.class_input.placeholder = "class name";
+        this.class_input.addEventListener('keydown', this);
+        this.canvas.parentElement.appendChild(this.class_input);
+
+        this.states = {
+            NEUTRAL: Symbol('neutral'),
+            DRAWING_BOX: Symbol('drawing_box'),
+            STARTING_BOX: Symbol('starting_box'),
+            WRITING_LABEL: Symbol('writing_label')
+        };
+        this.state = this.states.NEUTRAL;
+
+        this.canvas.addEventListener('click', this);
+        this.canvas.addEventListener('mouseup', this);
+        this.canvas.addEventListener('mousedown', this);
+    }
+
+    toCanvasCoordinates(x0, y0) {
+        let scale = this.display_width / this.image.width;
+        let xp = x0 * scale; 
+        let yp = y0 * scale; 
+        return [xp, yp];
+
+    }
+
+    fromCanvasCoordinates(xp, yp) {
+        let scale = this.display_width / this.image.width;
+        let x0 = xp / scale;
+        let y0 = yp / scale;
+        return [x0, y0];
+    }
+
+    handleEvent(event) {
+        switch (this.state) {
+            case this.states.NEUTRAL:
+                break;
+            case this.states.STARTING_BOX:
+                this._handleEventBoxStart(event);
+                break;
+            case this.states.DRAWING_BOX:
+                this._handleEventBoxDraw(event);
+                break;
+            case this.states.WRITING_LABEL:
+                this._handleEventWritingLabel(event);
+                break;
+        }
+
+    }
+    _handleEventWritingLabel(event) {
+        if (event.key == 'Escape') {
+            this.class_input.style.visibility = 'hidden';
+            this.class_input.blur();
+            this.state = this.states.NEUTRAL;
+        }
+        else if (event.key == 'Enter') {
+            let classname = this.class_input.value;
+            let [x0, y0] = this.fromCanvasCoordinates(this.box[0], this.box[1]);
+            let [x1, y1] = this.fromCanvasCoordinates(this.box[2], this.box[3]);
+            let new_label = {
+                label_set: "default", 
+                classname: classname, 
+                xmin: x0, 
+                ymin: y0,
+                xmax: x1, 
+                ymax: y1
+            };
+
+
+            this.labels.push(new_label);
+            this.state = this.states.NEUTRAL;
+            this.class_input.style.visibility = "hidden";
+            this.class_input.blur();
+            this.update();
+        }
+    }
+    _handleEventBoxStart(event) {
+        if (event.type == 'mousedown') {
+            this.state = this.states.DRAWING_BOX;
+            this.box = [event.offsetX, event.offsetY, event.offsetX, event.offsetY];
+            this.canvas.addEventListener('mousemove', this);
+        }
+    }
+    _handleEventBoxDraw(event) {
+        if (event.type == 'mousemove') {
+            this.box[2]= event.offsetX;
+            this.box[3] = event.offsetY;
+            this.update();
+        }
+        else if (event.type == 'mouseup') {
+            console.log('box:', this.box);
+            this.class_input.style.left = `${(this.box[0] + this.box[2])/2}px`;
+            this.class_input.style.top = `${(this.box[1] + this.box[3])/2}px`;
+            this.class_input.style.visibility = "visible";
+            console.log(this.class_input.style);
+            this.class_input.focus();
+
+            this.canvas.style.cursor = 'auto';
+            this.state = this.states.WRITING_LABEL;
+            this.canvas.removeEventListener('mousemove', this);
+            this.update();
+
+        }
+        else {
+            this.state = this.states.NEUTRAL;
+            this.canvas.style.cursor = 'auto';
+            this.canvas.removeEventListener('mousemove', this);
+            this.update();
+
+        }
+    }
+    enterDrawBoxMode() {
+        this.state = this.states.STARTING_BOX;
+        this.canvas.style.cursor = 'se-resize';
+    }
+
+    set_labels(labels) {
+        this.labels = labels;
+    }
+    clear_labels() {
+        this.labels = [];
+        this.update();
+
+    }
+
+    get_labels() {
+        return this.labels;
+    }
+
+    update() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        let scale = this.display_width / this.image.width;
+        this.display_height = scale * this.image.height;
+
+        this.canvas.width = this.canvas.parentElement.clientWidth;
+        this.canvas.height = this.display_height + 10;
+        this.context.drawImage(this.image, 0, 0, this.display_width, this.display_height);
+
+        if (this.state == this.states.DRAWING_BOX || this.state == this.states.WRITING_LABEL) {
+            this.context.lineWidth = 2;
+            this.context.setLineDash([5, 5]);
+
+            console.log(this.box);
+            let box_width = this.box[2] - this.box[0];
+            let box_height = this.box[3] - this.box[1];
+            this.context.strokeRect(this.box[0], this.box[1], box_width, box_height);
+            this.context.setLineDash([]);
+        }
+
+
+        //Prevent the lines from crossing by drawing the highest boxes first
+        this.labels.sort((a, b) => (a.ymin > b.ymin));
+
+
+        let text_offset = 100;
+        for (let label of this.labels) {
+            if (!(label.classname in this.class_color_key)) {
+                this.class_color_key[label.classname] = this.box_colors.pop();
+            }
+
+            this.context.lineWidth = 2;
+            this.context.setLineDash([]);
+            this.context.strokeStyle = this.class_color_key[label.classname];
+            let [xmin_canvas, ymin_canvas] = this.toCanvasCoordinates(label.xmin, label.ymin);
+            let [xmax_canvas, ymax_canvas] = this.toCanvasCoordinates(label.xmax, label.ymax);
+            this.context.strokeRect(xmin_canvas, ymin_canvas, xmax_canvas-xmin_canvas, ymax_canvas-ymin_canvas);
+
+            this.context.moveTo(xmax_canvas, ymin_canvas);
+            this.context.lineTo(this.display_width + 40, text_offset);
+            this.context.setLineDash([5, 5]);
+            //this.context.strokeStyle = this.class_color_key[classname];
+
+            this.context.stroke();
+            this.context.setLineDash([]);
+            this.context.font = "30px serif";
+            this.context.fillText(`${label.classname}`, this.display_width + 40, text_offset + 5);
+            text_offset += 100;
+        }
+
+    }
+        
+}
+
 /** @type {HTMLButtonElement} */
 var goButton = document.getElementById("go")
 //goButton.addEventListener('click', go_to_position);
@@ -15,19 +218,27 @@ if (sessionStorage.getItem('username') != null) {
     server = new MLServer(sessionStorage.getItem('server_url'),  sessionStorage.getItem('database_name'), sessionStorage.getItem('username'), sessionStorage.getItem('password'));
 }
 
+var current_image = new Image();
+//current_image.addEventListener('load', () => label_editor_canvas.update());
+
+
 /** @type {HTMLCanvasElement} */
 var canvas = document.getElementById("canvas")
 
-/** @type {CanvasRenderingContext2D} */
-var context = canvas.getContext("2d");
+var label_editor_canvas = new LabelEditorCanvas(canvas, current_image);
 
 /** @type {HTMLButtonElement} */
 var refreshButton = document.getElementById("refresh");
-refreshButton.addEventListener('click', refreshInterface);
+refreshButton.addEventListener('click', () => refreshInterface);
+
+/** @type {HTMLButtonElement} */
+var clear_button = document.getElementById("clear");
+clear_button.addEventListener('click', () => label_editor_canvas.clear_labels());
+
 
 /** @type {HTMLButtonElement} */
 var draw_box_button = document.getElementById("draw_box");
-draw_box_button.addEventListener('click', enterDrawBoxMode);
+draw_box_button.addEventListener('click', () => label_editor_canvas.enterDrawBoxMode());
 
 
 /** @type {HTMLSelectElement} */
@@ -37,7 +248,7 @@ image_set_selector.addEventListener('change', updateImageSelector);
 ///** @type {HTMLSelectElement} */
 //var source_label_set_selector = document.getElementById("source_label_set_select");
 var source_label_set_selector = new CheckBoxList(document.getElementById("source_label_set_select"),
-    "Source Label Sets", null, true);
+    "Source Label Sets", refreshCurrentImage, true);
 var source_label_sets = [];
 
 /** @type {HTMLInputElement} */
@@ -53,28 +264,30 @@ save_button.addEventListener('click', saveLabels);
 
 /** @type {HTMLSelectElement} */
 var image_selector = document.getElementById("image_id_select");
-image_selector.addEventListener('change', changeCurrentImage);
+image_selector.addEventListener('change', refreshCurrentImage);
 
 var displayed_image_ids = [];
 var current_image_set = null;
 var current_image_id = null;
-var current_image = new Image();
-current_image.onload = updateCanvas;
-//width of the image on the screen
-var display_width = 400;
-var display_height = null;
-//current box the user is drawing
-var drawing_box = false;
-var box_x0, box_y0, box_x1, box_y1;
 
 var current_image_labels = [];
 var labels_buffer = [];
 
-var box_colors = ["blue", "green", "purple", "red"];
-var class_color_key = {};
 
 
 await refreshInterface();
+
+
+class LabelEditor {
+    constructor() {
+        this.image_ids = {};
+        this.labels = {};
+
+    }
+
+}
+
+
 
 
 async function refreshInterface() {
@@ -85,154 +298,32 @@ async function refreshInterface() {
 
     let label_sets = await server.get_label_sets();
     for (let label_set of label_sets) {
+        if (source_label_set_selector.has_item(label_set)) continue;
         source_label_set_selector.add_item(label_set);
     }
 
-
     updateImageSelector();
+    refreshCurrentImage();
+    label_editor_canvas.update();
 }
 
 async function saveLabels() {
-    console.log(labels_buffer);
-    for (let label of labels_buffer) {
-        let [label_set, classname, x0, y0, x1, y1] = label;
-        label = [classname, x0, y0, x1, y1];
+    let new_labels = label_editor_canvas.get_labels();
+    for (let label of new_labels) {
         if (target_label_set_input.value == '') {
             alert('Enter a target label set');
             return;
         }
+
+        label.label_set = target_label_set_input.value;
         server.set_label(target_label_set_input.value, current_image_set, current_image_id, label);
     }
 
 }
 
-//------- Drawing Boxes -------------------------
-
-function enterDrawBoxMode(event) {
-    canvas.addEventListener('mousedown', beginDrawBox);
-    canvas.style.cursor = 'se-resize';
-    canvas.addEventListener('click', exitDrawBoxMode);
-}
-function exitDrawBoxMode(event) {
-    canvas.removeEventListener('mousedown', beginDrawBox);
-    canvas.style.cursor = 'auto';
-}
-
-function beginDrawBox(event) {
-    drawing_box = true;
-    box_x0 = event.offsetX;
-    box_y0 = event.offsetY;
-    box_x1 = event.offsetX;
-    box_y1 = event.offsetY;
-    canvas.addEventListener('mousemove', adjustBox);
-    canvas.addEventListener('mouseup', endDrawBox);
-}
-function adjustBox(event) {
-    box_x1 = event.offsetX;
-    box_y1 = event.offsetY;
-    updateCanvas();
-}
-function endDrawBox(event) {
-    canvas.removeEventListener('mousemove', adjustBox);
-    canvas.removeEventListener('mouseup', endDrawBox);
-
-    class_input.style.left = `${(box_x1 + box_x0)/2}px`;
-    class_input.style.top = `${(box_y1 + box_y0)/2}px`;
-    class_input.style.visibility = "visible";
-    class_input.focus();
-
-    //class_input.setAttribute("style", `visibility:visible; position:absolute; top:${cy}px; left:${cx}px;`);
-}
-
-class_input.onkeydown = function(event) {
-    if (event.key == 'Escape') {
-        class_input.style.visibility = 'hidden';
-        class_input.blur();
-        exitDrawBoxMode();
-    }
-    else if (event.key == 'Enter') {
-        let classname = class_input.value;
-        let [x0, y0] = fromCanvasCoordinates(current_image, box_x0, box_y0);
-        let [x1, y1] = fromCanvasCoordinates(current_image, box_x1, box_y1);
-        console.log(x0, y0, x1, y1);
-        let new_label = ["default", classname, x0, y0, x1, y1];
-
-        current_image_labels.push(new_label);
-        labels_buffer.push(new_label);
-        exitDrawBoxMode();
-        class_input.style.visibility = "hidden";
-        class_input.blur();
-        updateCanvas();
-    }
-}
-
-//--------------------------------
 
 
-
-function updateCanvas() {
-    //Function just for rendering the canvas, should not change any state
-
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    if (current_image != null) {
-        let scale = display_width / current_image.width;
-        display_height = scale * current_image.height;
-
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = display_height + 10;
-        context.drawImage(current_image, 0, 0, display_width, display_height);
-    }
-
-    context.lineWidth = 2;
-    context.setLineDash([5, 5]);
-    if (drawing_box) {
-        context.strokeRect(box_x0, box_y0, box_x1-box_x0, box_y1-box_y0);
-    }
-
-    let textOffset = 100;
-
-    for (let label of current_image_labels) {
-        let [label_set, classname, xmin, ymin, xmax, ymax] = label;
-        if (!(classname in class_color_key)) {
-            class_color_key[classname] = box_colors.pop();
-        }
-        context.lineWidth = 2;
-        context.setLineDash([]);
-        context.strokeStyle = class_color_key[classname];
-        [xmin, ymin] = toCanvasCoordinates(current_image, xmin, ymin);
-        [xmax, ymax] = toCanvasCoordinates(current_image, xmax, ymax);
-        context.strokeRect(xmin, ymin, xmax-xmin, ymax-ymin);
-
-        context.moveTo(xmax, ymin);
-        context.lineTo(display_width + 40, textOffset);
-        context.setLineDash([5, 5]);
-        context.strokeStyle = class_color_key[classname];
-
-        context.stroke();
-        context.setLineDash([]);
-        context.font = "30px serif";
-        context.fillText(`${classname}`, display_width + 40, textOffset + 5);
-        textOffset += 100;
-    }
-
-
-}
-
-function toCanvasCoordinates(image, x0, y0) {
-    let xp = x0 * display_width / image.width;
-    let yp = y0 * display_height / image.height;
-    return [xp, yp];
-
-}
-
-function fromCanvasCoordinates(image, xp, yp) {
-    let x0 = xp * image.width / display_width;
-    let y0 = yp * image.width / display_width;
-    return [x0, y0];
-}
-
-
-async function changeCurrentImage() {
+async function refreshCurrentImage() {
     current_image_id = displayed_image_ids[image_selector.selectedIndex];
     current_image_set = image_set_selector.value;
     
@@ -241,11 +332,12 @@ async function changeCurrentImage() {
     let image_url = URL.createObjectURL(image_blob);
     current_image.src = image_url;
 
-    current_image_labels = await server.get_image_labels(current_image_set, current_image_id);
-    labels_buffer = [];
-    drawing_box = false;
+    let labels = await server.get_image_labels(current_image_set, current_image_id);
 
-    updateCanvas();
+    labels = labels.filter((label) => source_label_set_selector.item_selected(label.label_set));
+
+    label_editor_canvas.set_labels(labels);
+    label_editor_canvas.update();
 
 }
 

@@ -59,7 +59,14 @@ export class MLServer extends idb.Accessor {
             let xmax = Math.max(x0, x1);
             let ymin = Math.min(y0, y1);
             let ymax = Math.max(y0, y1);
-            labels2.push([label_set, classname, xmin, ymin, xmax, ymax]);
+            labels2.push({
+                'label_set': label_set, 
+                'classname': classname, 
+                'xmin': xmin,
+                'ymin': ymin, 
+                'xmax': xmax,
+                'ymax': ymax
+            });
         }
         return labels2;
     }
