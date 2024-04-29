@@ -30,6 +30,7 @@ export class MLServer extends idb.Accessor {
         //image_id = idb.unflattenFromLists(image_id.slice(1));
         console.log(image_set);
         console.log(image_id);
+        label = [label.classname, label.xmin, label.ymin, label.xmax, label.ymax];
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "set_label"],
             {

@@ -1,6 +1,7 @@
 import {MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
+
 class LabelEditorCanvas {
     constructor(canvas, image) {
         this.canvas = canvas;
@@ -17,6 +18,8 @@ class LabelEditorCanvas {
 
         this.box = null;
 
+        this.box_labels = [];
+        this.label_editing_popup = null;
 
         this.class_input = document.createElement('input');
         this.class_input.style.position = 'absolute';
@@ -56,6 +59,7 @@ class LabelEditorCanvas {
     handleEvent(event) {
         switch (this.state) {
             case this.states.NEUTRAL:
+                this._handleEventNeutral(event);
                 break;
             case this.states.STARTING_BOX:
                 this._handleEventBoxStart(event);
@@ -69,6 +73,96 @@ class LabelEditorCanvas {
         }
 
     }
+
+    _handleEventNeutral(event) {
+        //if (event.type == 'click') {
+            //console.log(`(${event.offsetX}, ${event.offsetY}) clicked.`);
+            //console.log(this.click_zones);
+            //for (let click_zone of this.click_zones) {
+                //if (click_zone.box.contains(event.offsetX, event.offsetY)) {
+                    //console.log(`${click_zone.label_index} clicked.`);
+                //}
+                
+            //}
+
+        //}
+        if (event.type == 'click') {
+            if (this.label_editing_popup && event.target != this.label_editing_popup) {
+                this.label_editing_popup.remove();
+                this.label_editing_popup = null;
+            }
+            for (let i = 0; i < this.box_labels.length; i++) {
+                let box_label = this.box_labels[i];
+                if (event.target == box_label) {
+                    console.log(`${i} clicked.`);
+                    this.display_label_editing_popup(event.target.offsetLeft, event.target.offsetTop, i);
+                }
+            }
+        }
+    }
+
+    display_label_editing_popup(x, y, label_index) {
+        let label = this.labels[label_index];
+        if (this.label_editing_popup != null) return;
+        console.log("showing popup");
+        this.label_editing_popup = document.createElement('div');
+        this.label_editing_popup.classList.add("label-popup");
+        this.label_editing_popup.style.left = `${x}px`;
+        this.label_editing_popup.style.top = `${y + 50}px`;
+
+        let text_area = document.createElement("div");
+        text_area.classList.add("text");
+
+        let label_info = document.createElement("p");
+        label_info.innerHTML = `Class: ${label.classname}, Label set: ${label.label_set}`;
+        let label_coords = document.createElement("p");
+        label_coords.innerHTML = `Coords: (${label.xmin}, ${label.ymin}) (${label.xmax}, ${label.ymax})`;
+
+        text_area.appendChild(label_info);
+        text_area.appendChild(label_coords);
+
+
+        let buttons_area = document.createElement("div");
+        buttons_area.classList.add("buttons");
+
+        /** @type {HTMLButtonElement} */
+        let label_save_button = document.createElement("button");
+        label_save_button.textContent = "Save";
+
+        /** @type {HTMLButtonElement} */
+        let label_delete_button = document.createElement("button");
+        label_delete_button.textContent = "Delete";
+        label_delete_button.classList.add("delete-button");
+        label_delete_button.onclick = (event) => {
+            this.labels.splice(label_index, 1);
+            this.label_editing_popup.remove();
+            this.label_editing_popup = null;
+            this.update();
+        }
+
+        /** @type {HTMLButtonElement} */
+        let label_cancel_button = document.createElement("button");
+        label_cancel_button.textContent = "Cancel";
+        label_cancel_button.onclick = (event) => {
+            this.label_editing_popup.remove();
+            this.label_editing_popup = null;
+        }
+        buttons_area.appendChild(label_save_button);
+        buttons_area.appendChild(label_cancel_button);
+        buttons_area.appendChild(label_delete_button);
+
+        this.label_editing_popup.appendChild(text_area);
+        this.label_editing_popup.appendChild(buttons_area);
+        
+        this.canvas.parentElement.appendChild(this.label_editing_popup);
+
+        //document.addEventListener('click', (event) => {
+            //if (event.target != this.label_editing_popup) {
+                //this.label_editing_popup.remove();
+            //}
+        //});
+    }
+
     _handleEventWritingLabel(event) {
         if (event.key == 'Escape') {
             this.class_input.style.visibility = 'hidden';
@@ -80,7 +174,7 @@ class LabelEditorCanvas {
             let [x0, y0] = this.fromCanvasCoordinates(this.box[0], this.box[1]);
             let [x1, y1] = this.fromCanvasCoordinates(this.box[2], this.box[3]);
             let new_label = {
-                label_set: "default", 
+                label_set: 'default',
                 classname: classname, 
                 xmin: x0, 
                 ymin: y0,
@@ -151,6 +245,15 @@ class LabelEditorCanvas {
 
     update() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.label_editing_popup) {
+            this.label_editing_popup.remove();
+            this.label_editing_popup = null;
+        }
+
+        for (let box_label of this.box_labels) {
+            box_label.remove();
+        }
+        this.box_labels = [];
 
         let scale = this.display_width / this.image.width;
         this.display_height = scale * this.image.height;
@@ -176,7 +279,9 @@ class LabelEditorCanvas {
 
 
         let text_offset = 100;
-        for (let label of this.labels) {
+        
+        for (let label_index = 0; label_index < this.labels.length; label_index++) {
+            let label = this.labels[label_index];
             if (!(label.classname in this.class_color_key)) {
                 this.class_color_key[label.classname] = this.box_colors.pop();
             }
@@ -193,10 +298,28 @@ class LabelEditorCanvas {
             this.context.setLineDash([5, 5]);
             //this.context.strokeStyle = this.class_color_key[classname];
 
+            let text_xmin = this.display_width + 40;
+            let text_ymin = text_offset + 5;
+
             this.context.stroke();
             this.context.setLineDash([]);
-            this.context.font = "30px serif";
-            this.context.fillText(`${label.classname}`, this.display_width + 40, text_offset + 5);
+
+            //this.context.font = "30px serif";
+                        //this.context.fillText(`${label.classname} (${label.label_set})`, text_xmin, text_ymin);
+            //this.click_zones.push({
+                //box: new Rectangle(text_xmin, text_ymin, text_xmin + 100, text_ymin+20),
+                //label_index: label_index
+
+            //})
+            let box_label = document.createElement("label");
+            box_label.style.position = 'absolute';
+            box_label.innerHTML = label.classname;
+            box_label.style.left = `${text_xmin}px`;
+            box_label.style.top = `${text_ymin}px`;
+            box_label.addEventListener('click', this);
+            this.canvas.parentElement.appendChild(box_label);
+            this.box_labels.push(box_label);
+
             text_offset += 100;
         }
 
@@ -276,6 +399,13 @@ var labels_buffer = [];
 
 
 await refreshInterface();
+
+if (sessionStorage.getItem('image_set') != null) {
+    console.log(image_set_selector.value);
+    console.log(sessionStorage.getItem('image_set'));
+    image_set_selector.value = sessionStorage.getItem('image_set');
+
+}
 
 
 class LabelEditor {
@@ -368,6 +498,7 @@ function getImageName(image_id) {
 }
 async function updateImageSelector() {
     let image_set = image_set_selector.value;
+    sessionStorage.setItem('image_set', image_set);
     
     displayed_image_ids = await server.get_image_ids(image_set);
     let image_names = [];

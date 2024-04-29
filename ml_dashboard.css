@@ -179,3 +179,50 @@ select option {
 .idselect option {
     background-color: whitesmoke;
 }
+
+
+.label-popup {
+    display: grid;
+    grid-template-rows: 60% 40%;
+    grid-template-columns: 25% 50% 25%;
+    justify-items: center;
+    align-items: center;
+    justify-content: center;
+
+    position: absolute;
+    background-color: #ccc;
+    width: 400px;
+    height: 200px;
+    padding: 0px;
+    border-radius: 5px;
+    visibility: visible;
+    -webkit-animation: fadeIn 0.5s;
+    animation: fadeIn 0.5s;
+    opacity: 0.7;
+}
+@-webkit-keyframes fadeIn {
+    from {opacity: 0;} 
+    to {opacity: 0.7;}
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity:0.7 ;}
+}
+
+.label-popup .text {
+    grid-column: 2;
+    grid-row: 1;
+}
+.label-popup .buttons {
+    grid-row: 2;
+    grid-column: 2;
+
+}
+.label-popup button {
+    margin:5px;
+}
+
+.label-popup .delete-button {
+    background-color: red;
+}
