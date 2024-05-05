@@ -153,7 +153,7 @@ button:hover {
     }
 }
 
-select {
+.drop-down-select {
     background-color: #04AA6D;
     color: white;
     padding: 8px;
@@ -161,7 +161,7 @@ select {
     border: none;
 }
 
-select option {
+.drop-down-select option {
     position: absolute;
     background-color: #f1f1f1;
     min-width: 160px;
@@ -180,6 +180,19 @@ select option {
     background-color: whitesmoke;
 }
 
+.idselect option[selected] {
+    background-color: green;
+
+}
+.dangerous-button {
+    background-color: red;
+}
+
+.box-label {
+    background-color: rgba(207, 180, 230, 0.842);
+    border-radius: 5px;
+    padding: 3px;
+}
 
 .label-popup {
     display: grid;
@@ -198,16 +211,15 @@ select option {
     visibility: visible;
     -webkit-animation: fadeIn 0.5s;
     animation: fadeIn 0.5s;
-    opacity: 0.7;
 }
 @-webkit-keyframes fadeIn {
     from {opacity: 0;} 
-    to {opacity: 0.7;}
+    to {opacity: 1.0;}
 }
 
 @keyframes fadeIn {
     from {opacity: 0;}
-    to {opacity:0.7 ;}
+    to {opacity: 1.0 ;}
 }
 
 .label-popup .text {
@@ -221,8 +233,4 @@ select option {
 }
 .label-popup button {
     margin:5px;
-}
-
-.label-popup .delete-button {
-    background-color: red;
 }

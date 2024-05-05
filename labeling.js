@@ -3,14 +3,18 @@ import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
 
 class LabelEditorCanvas {
-    constructor(canvas, image) {
+    constructor(canvas, image, server) {
         this.canvas = canvas;
 
         /** @type {CanvasRenderingContext2D} */
         this.context = this.canvas.getContext("2d");
 
+        this.server = server;
         this.image = image;
         this.labels = [];
+        this.target_label_set = null;
+        this.current_image_id = null;
+        this.current_image_set = null;
 
         this.display_width = 400;
         this.box_colors = ["blue", "green", "purple", "red"];
@@ -75,36 +79,29 @@ class LabelEditorCanvas {
     }
 
     _handleEventNeutral(event) {
-        //if (event.type == 'click') {
-            //console.log(`(${event.offsetX}, ${event.offsetY}) clicked.`);
-            //console.log(this.click_zones);
-            //for (let click_zone of this.click_zones) {
-                //if (click_zone.box.contains(event.offsetX, event.offsetY)) {
-                    //console.log(`${click_zone.label_index} clicked.`);
-                //}
-                
-            //}
-
-        //}
         if (event.type == 'click') {
             if (this.label_editing_popup && event.target != this.label_editing_popup) {
-                this.label_editing_popup.remove();
-                this.label_editing_popup = null;
+                this.remove_label_editing_popup();
             }
             for (let i = 0; i < this.box_labels.length; i++) {
                 let box_label = this.box_labels[i];
                 if (event.target == box_label) {
-                    console.log(`${i} clicked.`);
                     this.display_label_editing_popup(event.target.offsetLeft, event.target.offsetTop, i);
                 }
             }
         }
     }
 
+    remove_label_editing_popup() {
+        this.label_editing_popup.remove();
+        this.label_editing_popup = null;
+        this.update();
+
+    }
+
     display_label_editing_popup(x, y, label_index) {
         let label = this.labels[label_index];
         if (this.label_editing_popup != null) return;
-        console.log("showing popup");
         this.label_editing_popup = document.createElement('div');
         this.label_editing_popup.classList.add("label-popup");
         this.label_editing_popup.style.left = `${x}px`;
@@ -113,12 +110,16 @@ class LabelEditorCanvas {
         let text_area = document.createElement("div");
         text_area.classList.add("text");
 
-        let label_info = document.createElement("p");
-        label_info.innerHTML = `Class: ${label.classname}, Label set: ${label.label_set}`;
+        let label_class = document.createElement("p");
+        label_class.innerHTML = `Class: ${label.classname}`;
+        let label_set_name = document.createElement("p");
+        label_set_name.innerHTML = `Label Set: ${label.label_set}`;
+
         let label_coords = document.createElement("p");
         label_coords.innerHTML = `Coords: (${label.xmin}, ${label.ymin}) (${label.xmax}, ${label.ymax})`;
 
-        text_area.appendChild(label_info);
+        text_area.appendChild(label_class);
+        text_area.appendChild(label_set_name);
         text_area.appendChild(label_coords);
 
 
@@ -128,25 +129,34 @@ class LabelEditorCanvas {
         /** @type {HTMLButtonElement} */
         let label_save_button = document.createElement("button");
         label_save_button.textContent = "Save";
+        label_save_button.onclick = (event) => {
+            console.log(this.target_label_set, this.current_image_set, this.current_image_id);
+            this.server.setLabel(this.target_label_set, this.current_image_set, this.current_image_id, label);
+            this.remove_label_editing_popup();
+
+        };
 
         /** @type {HTMLButtonElement} */
         let label_delete_button = document.createElement("button");
         label_delete_button.textContent = "Delete";
-        label_delete_button.classList.add("delete-button");
+        label_delete_button.classList.add("dangerous-button");
         label_delete_button.onclick = (event) => {
-            this.labels.splice(label_index, 1);
-            this.label_editing_popup.remove();
-            this.label_editing_popup = null;
-            this.update();
+            //this.labels.splice(label_index, 1);
+            if (this.target_label_set == null) {
+                alert("Specify target label set.");
+                return;
+            }
+            this.server.deleteLabel(this.target_label_set, this.current_image_set, this.current_image_id, label);
+            this.remove_label_editing_popup();
         }
 
         /** @type {HTMLButtonElement} */
         let label_cancel_button = document.createElement("button");
         label_cancel_button.textContent = "Cancel";
         label_cancel_button.onclick = (event) => {
-            this.label_editing_popup.remove();
-            this.label_editing_popup = null;
+            this.remove_label_editing_popup();
         }
+
         buttons_area.appendChild(label_save_button);
         buttons_area.appendChild(label_cancel_button);
         buttons_area.appendChild(label_delete_button);
@@ -156,11 +166,6 @@ class LabelEditorCanvas {
         
         this.canvas.parentElement.appendChild(this.label_editing_popup);
 
-        //document.addEventListener('click', (event) => {
-            //if (event.target != this.label_editing_popup) {
-                //this.label_editing_popup.remove();
-            //}
-        //});
     }
 
     _handleEventWritingLabel(event) {
@@ -174,7 +179,7 @@ class LabelEditorCanvas {
             let [x0, y0] = this.fromCanvasCoordinates(this.box[0], this.box[1]);
             let [x1, y1] = this.fromCanvasCoordinates(this.box[2], this.box[3]);
             let new_label = {
-                label_set: 'default',
+                label_set: `${this.target_label_set} -- unsaved`,
                 classname: classname, 
                 xmin: x0, 
                 ymin: y0,
@@ -204,11 +209,9 @@ class LabelEditorCanvas {
             this.update();
         }
         else if (event.type == 'mouseup') {
-            console.log('box:', this.box);
             this.class_input.style.left = `${(this.box[0] + this.box[2])/2}px`;
             this.class_input.style.top = `${(this.box[1] + this.box[3])/2}px`;
             this.class_input.style.visibility = "visible";
-            console.log(this.class_input.style);
             this.class_input.focus();
 
             this.canvas.style.cursor = 'auto';
@@ -246,8 +249,7 @@ class LabelEditorCanvas {
     update() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.label_editing_popup) {
-            this.label_editing_popup.remove();
-            this.label_editing_popup = null;
+            this.remove_label_editing_popup();
         }
 
         for (let box_label of this.box_labels) {
@@ -259,14 +261,13 @@ class LabelEditorCanvas {
         this.display_height = scale * this.image.height;
 
         this.canvas.width = this.canvas.parentElement.clientWidth;
-        this.canvas.height = this.display_height + 10;
+        this.canvas.height = Math.max(this.display_height, window.innerHeight);
         this.context.drawImage(this.image, 0, 0, this.display_width, this.display_height);
 
         if (this.state == this.states.DRAWING_BOX || this.state == this.states.WRITING_LABEL) {
             this.context.lineWidth = 2;
             this.context.setLineDash([5, 5]);
 
-            console.log(this.box);
             let box_width = this.box[2] - this.box[0];
             let box_height = this.box[3] - this.box[1];
             this.context.strokeRect(this.box[0], this.box[1], box_width, box_height);
@@ -278,7 +279,7 @@ class LabelEditorCanvas {
         this.labels.sort((a, b) => (a.ymin > b.ymin));
 
 
-        let text_offset = 100;
+        let text_offset = 50;
         
         for (let label_index = 0; label_index < this.labels.length; label_index++) {
             let label = this.labels[label_index];
@@ -304,23 +305,17 @@ class LabelEditorCanvas {
             this.context.stroke();
             this.context.setLineDash([]);
 
-            //this.context.font = "30px serif";
-                        //this.context.fillText(`${label.classname} (${label.label_set})`, text_xmin, text_ymin);
-            //this.click_zones.push({
-                //box: new Rectangle(text_xmin, text_ymin, text_xmin + 100, text_ymin+20),
-                //label_index: label_index
-
-            //})
             let box_label = document.createElement("label");
+            box_label.classList.add('box-label');
             box_label.style.position = 'absolute';
-            box_label.innerHTML = label.classname;
+            box_label.innerHTML = `${label.classname} (${label.label_set})`;
             box_label.style.left = `${text_xmin}px`;
             box_label.style.top = `${text_ymin}px`;
             box_label.addEventListener('click', this);
             this.canvas.parentElement.appendChild(box_label);
             this.box_labels.push(box_label);
 
-            text_offset += 100;
+            text_offset += 50;
         }
 
     }
@@ -348,11 +343,11 @@ var current_image = new Image();
 /** @type {HTMLCanvasElement} */
 var canvas = document.getElementById("canvas")
 
-var label_editor_canvas = new LabelEditorCanvas(canvas, current_image);
+var label_editor_canvas = new LabelEditorCanvas(canvas, current_image, server);
 
 /** @type {HTMLButtonElement} */
 var refreshButton = document.getElementById("refresh");
-refreshButton.addEventListener('click', () => refreshInterface);
+refreshButton.addEventListener('click', () => refreshCurrentImage);
 
 /** @type {HTMLButtonElement} */
 var clear_button = document.getElementById("clear");
@@ -376,6 +371,9 @@ var source_label_sets = [];
 
 /** @type {HTMLInputElement} */
 var target_label_set_input = document.getElementById("target_label_set");
+target_label_set_input.onchange = (event) => {
+    label_editor_canvas.target_label_set = target_label_set_input.value;
+};
 
 /** @type {HTMLInputElement} */
 var class_input = document.getElementById("class_input");
@@ -401,32 +399,19 @@ var labels_buffer = [];
 await refreshInterface();
 
 if (sessionStorage.getItem('image_set') != null) {
-    console.log(image_set_selector.value);
-    console.log(sessionStorage.getItem('image_set'));
     image_set_selector.value = sessionStorage.getItem('image_set');
 
 }
-
-
-class LabelEditor {
-    constructor() {
-        this.image_ids = {};
-        this.labels = {};
-
-    }
-
-}
-
 
 
 
 async function refreshInterface() {
     await setLoginStatus();
 
-    let image_sets = await server.get_image_sets();
+    let image_sets = await server.getImageSets();
     updateSelector(image_set_selector, image_sets);
 
-    let label_sets = await server.get_label_sets();
+    let label_sets = await server.getLabelSets();
     for (let label_set of label_sets) {
         if (source_label_set_selector.has_item(label_set)) continue;
         source_label_set_selector.add_item(label_set);
@@ -435,6 +420,10 @@ async function refreshInterface() {
     updateImageSelector();
     refreshCurrentImage();
     label_editor_canvas.update();
+}
+
+async function saveLabel(label) {
+    server.setLabel(target_label_set_input.value, current_image_set, current_image_id, label);
 }
 
 async function saveLabels() {
@@ -446,27 +435,41 @@ async function saveLabels() {
         }
 
         label.label_set = target_label_set_input.value;
-        server.set_label(target_label_set_input.value, current_image_set, current_image_id, label);
+        server.setLabel(target_label_set_input.value, current_image_set, current_image_id, label);
     }
 
 }
 
 
 
+
 async function refreshCurrentImage() {
     current_image_id = displayed_image_ids[image_selector.selectedIndex];
     current_image_set = image_set_selector.value;
+
+    //un-highlight the previously selected image Id, and highlight the new one
+    let old_option = image_selector.querySelector("option[selected]");
+    if (old_option) {
+        old_option.removeAttribute("selected");
+    }
+    let new_option = image_selector.options[image_selector.selectedIndex];
+    if (new_option != null) {
+        new_option.setAttribute("selected", "true");
+    }
     
-    let image_blob = await server.get_image(current_image_set, current_image_id);
+    let image_blob = await server.getImage(current_image_set, current_image_id);
 
     let image_url = URL.createObjectURL(image_blob);
     current_image.src = image_url;
 
-    let labels = await server.get_image_labels(current_image_set, current_image_id);
+    let labels = await server.getImageLabels(current_image_set, current_image_id);
 
     labels = labels.filter((label) => source_label_set_selector.item_selected(label.label_set));
 
     label_editor_canvas.set_labels(labels);
+    label_editor_canvas.current_image_id = current_image_id;
+    label_editor_canvas.current_image_set = current_image_set;
+    label_editor_canvas.target_label_set = target_label_set_input.value;
     label_editor_canvas.update();
 
 }
@@ -500,7 +503,7 @@ async function updateImageSelector() {
     let image_set = image_set_selector.value;
     sessionStorage.setItem('image_set', image_set);
     
-    displayed_image_ids = await server.get_image_ids(image_set);
+    displayed_image_ids = await server.getImageIds(image_set);
     let image_names = [];
     for (let i = 0; i < displayed_image_ids.length; i++) {
         let image_id = displayed_image_ids[i];

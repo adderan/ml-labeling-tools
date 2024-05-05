@@ -8,7 +8,7 @@ export class MLServer extends idb.Accessor {
 
     }
 
-    async get_image_sets() {
+    async getImageSets() {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_image_sets"]
         );
@@ -19,18 +19,23 @@ export class MLServer extends idb.Accessor {
 
     }
 
-    async get_label_sets() {
+    async getLabelSets() {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_label_sets"]
         );
         let label_sets = idb.flattenToLists(result["_label_set"]);
         return label_sets;
     }
-    async set_label(label_set, image_set, image_id, label) {
+    async setLabel(label_set, image_set, image_id, label) {
         //image_id = idb.unflattenFromLists(image_id.slice(1));
         console.log(image_set);
         console.log(image_id);
-        label = [label.classname, label.xmin, label.ymin, label.xmax, label.ymax];
+        label = [
+            label.classname, 
+            Math.round(label.xmin), 
+            Math.round(label.ymin), 
+            Math.round(label.xmax), 
+            Math.round(label.ymax)];
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "set_label"],
             {
@@ -41,8 +46,20 @@ export class MLServer extends idb.Accessor {
             }
         );
     }
+    async deleteLabel(label_set, image_set, image_id, label) {
+        label = [label.classname, label.xmin, label.ymin, label.xmax, label.ymax];
+        let [success, result, content_type] = await this.execute_query(
+            [INTERFACE, "delete_label"],
+            {
+                "_label_set": label_set,
+                "_image_set": image_set,
+                "_image_id": image_id,
+                "_label": label
+            }
+        )
+    }
 
-    async get_image_labels(image_set, image_id) {
+    async getImageLabels(image_set, image_id) {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_labels_by_image_id"],
             {
@@ -72,7 +89,7 @@ export class MLServer extends idb.Accessor {
         return labels2;
     }
 
-    async get_image(image_set, image_id) {
+    async getImage(image_set, image_id) {
         let [success, result, content_type] = await this.execute_get_blob_query(
             [INTERFACE, "get_image"],
             {
@@ -83,7 +100,7 @@ export class MLServer extends idb.Accessor {
 
         return result;
     }
-    async get_image_ids(image_set) {
+    async getImageIds(image_set) {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_image_ids"],
             {"_image_set": image_set}
