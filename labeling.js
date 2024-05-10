@@ -16,6 +16,8 @@ class LabelEditorCanvas {
         this.current_image_id = null;
         this.current_image_set = null;
 
+        this.enabled_label_sets = [];
+
         this.display_width = 400;
         this.box_colors = ["blue", "green", "purple", "red"];
         this.class_color_key = {};
@@ -133,6 +135,7 @@ class LabelEditorCanvas {
             console.log(this.target_label_set, this.current_image_set, this.current_image_id);
             this.server.setLabel(this.target_label_set, this.current_image_set, this.current_image_id, label);
             this.remove_label_editing_popup();
+            this.update_labels();
 
         };
 
@@ -148,6 +151,7 @@ class LabelEditorCanvas {
             }
             this.server.deleteLabel(this.target_label_set, this.current_image_set, this.current_image_id, label);
             this.remove_label_editing_popup();
+            this.update_labels();
         }
 
         /** @type {HTMLButtonElement} */
@@ -181,10 +185,10 @@ class LabelEditorCanvas {
             let new_label = {
                 label_set: `${this.target_label_set} -- unsaved`,
                 classname: classname, 
-                xmin: x0, 
-                ymin: y0,
-                xmax: x1, 
-                ymax: y1
+                xmin: Math.round(x0), 
+                ymin: Math.round(y0),
+                xmax: Math.round(x1), 
+                ymax: Math.round(y1)
             };
 
 
@@ -233,9 +237,12 @@ class LabelEditorCanvas {
         this.canvas.style.cursor = 'se-resize';
     }
 
-    set_labels(labels) {
-        this.labels = labels;
+    async update_labels(labels) {
+        this.labels = await server.getImageLabels(current_image_set, current_image_id);
+        this.labels = this.labels.filter((label) => this.enabled_label_sets.includes(label.label_set));
+        this.update();
     }
+
     clear_labels() {
         this.labels = [];
         this.update();
@@ -322,6 +329,42 @@ class LabelEditorCanvas {
         
 }
 
+class ImageSelector {
+    constructor(root_div, image_ids, change_callback) {
+        this.change_callback = change_callback;
+        this.image_ids = image_ids;
+        this.root_div = root_div;
+
+        this.root_div.style.setAttribute("overflow-y", "scroll");
+
+        this.classList.add('image-selector');
+
+        this.items = {};
+        this.selected_item = image_ids[0];
+
+        this.image_id_list = document.createElement("ol");
+        for (let image_id of image_ids) {
+            let item = document.createElement("li")
+            item.textContent = image_id;
+            //item.addEventListener('click', this);
+            item.onclick = (event) => {
+                this.set_selected_item(image_id);
+
+            };
+            this.image_id_list.appendChild(item);
+            this.items[image_id] = item;
+        }
+    }
+
+    set_selected_item(image_id) {
+        this.items[this.selected_item].removeAttriute('selected');
+        this.selected_item = image_id;
+        this.items[image_id].setAttribute('selected');
+
+    }
+
+}
+
 /** @type {HTMLButtonElement} */
 var goButton = document.getElementById("go")
 //goButton.addEventListener('click', go_to_position);
@@ -365,9 +408,14 @@ image_set_selector.addEventListener('change', updateImageSelector);
 
 ///** @type {HTMLSelectElement} */
 //var source_label_set_selector = document.getElementById("source_label_set_select");
-var source_label_set_selector = new CheckBoxList(document.getElementById("source_label_set_select"),
-    "Source Label Sets", refreshCurrentImage, true);
-var source_label_sets = [];
+var source_label_set_selector = new CheckBoxList(
+    document.getElementById("source_label_set_select"),
+    "Source Label Sets", 
+    () => {
+        label_editor_canvas.enabled_label_sets = source_label_set_selector.get_selected_items();
+    }, 
+    true);
+
 
 /** @type {HTMLInputElement} */
 var target_label_set_input = document.getElementById("target_label_set");
@@ -417,9 +465,10 @@ async function refreshInterface() {
         source_label_set_selector.add_item(label_set);
     }
 
+    source_label_set_selector.dispatchEvent(new Event('change'));
+
     updateImageSelector();
     refreshCurrentImage();
-    label_editor_canvas.update();
 }
 
 async function saveLabel(label) {
@@ -462,15 +511,11 @@ async function refreshCurrentImage() {
     let image_url = URL.createObjectURL(image_blob);
     current_image.src = image_url;
 
-    let labels = await server.getImageLabels(current_image_set, current_image_id);
-
-    labels = labels.filter((label) => source_label_set_selector.item_selected(label.label_set));
-
-    label_editor_canvas.set_labels(labels);
+    
     label_editor_canvas.current_image_id = current_image_id;
     label_editor_canvas.current_image_set = current_image_set;
     label_editor_canvas.target_label_set = target_label_set_input.value;
-    label_editor_canvas.update();
+    label_editor_canvas.update_labels();
 
 }
 
