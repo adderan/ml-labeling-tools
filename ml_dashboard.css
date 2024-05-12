@@ -169,19 +169,30 @@ button:hover {
     z-index: 1;
 }
 
-.idselect {
+.image-selector {
     font-size: 16px;
     color: black;
     background-color: white;
 
 }
-
-.idselect option {
-    background-color: whitesmoke;
+.image-selector ol {
+    overflow-y: scroll;
+    height: 100vh;
+    display: inline-block;
+    list-style: none;
+    cursor: grab;
 }
 
-.idselect option[selected] {
-    background-color: green;
+.image-selector li {
+    background-color: rgba(45, 136, 148, 0.082);
+    border-radius: 5px;
+    padding: 3px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.image-selector li[selected] {
+    background-color: rgba(147, 85, 228, 0.432);
 
 }
 .dangerous-button {

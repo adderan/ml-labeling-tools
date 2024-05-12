@@ -330,37 +330,89 @@ class LabelEditorCanvas {
 }
 
 class ImageSelector {
-    constructor(root_div, image_ids, change_callback) {
+    constructor(root_div, change_callback) {
         this.change_callback = change_callback;
-        this.image_ids = image_ids;
         this.root_div = root_div;
 
-        this.root_div.style.setAttribute("overflow-y", "scroll");
-
-        this.classList.add('image-selector');
-
-        this.items = {};
-        this.selected_item = image_ids[0];
-
         this.image_id_list = document.createElement("ol");
-        for (let image_id of image_ids) {
-            let item = document.createElement("li")
-            item.textContent = image_id;
-            //item.addEventListener('click', this);
-            item.onclick = (event) => {
-                this.set_selected_item(image_id);
 
-            };
-            this.image_id_list.appendChild(item);
-            this.items[image_id] = item;
-        }
+        this.image_id_list.style.overflow_y = "scroll";
+        this.root_div.appendChild(this.image_id_list);
+
+        this.selected_index = null;
+        this.image_ids = [];
+        this.image_names = [];
+
+        this.image_id_list.addEventListener('click', this);
+        this.image_id_list.addEventListener('focusout', this);
+        this.image_id_list.addEventListener('keydown', this);
+        this.image_id_list.setAttribute('tabindex', -1);
+
     }
 
-    set_selected_item(image_id) {
-        this.items[this.selected_item].removeAttriute('selected');
-        this.selected_item = image_id;
-        this.items[image_id].setAttribute('selected');
+    get_image_name(image_id) {
+        let date = image_id[1];
+        let image_num = image_id.slice(2);
+        let image_name = `${date.toLocaleString()} ${image_num}`;
+        return image_name;
 
+    }
+
+    set_image_ids(image_ids) {
+
+        this.image_ids = image_ids;
+
+        this.items = [];
+        this.selected_item = 0;
+        this.image_id_list.innerHTML = '';
+
+        for (let index = 0; index < image_ids.length; index++) { 
+            let image_name = this.get_image_name(image_ids[index]);
+            let item = document.createElement("li");
+            item.textContent = `Image ${index} - ${image_name}`;
+            item.setAttribute('list_index', index);
+
+            this.image_id_list.appendChild(item);
+            this.items.push(item);
+        }
+        this.set_selected_index(0);
+    }
+    set_selected_index(index) {
+        if (this.selected_index != null && this.items[this.selected_index]) {
+            this.items[this.selected_index].removeAttribute('selected');
+        }
+        this.selected_index = index;
+        this.items[index].setAttribute('selected', 'selected');
+        this.change_callback();
+        this.items[this.selected_index].scrollIntoView({behavior: "smooth", block: "center"});
+        window.scrollTo(0,0);
+
+    }
+    handleEvent(event) {
+        if (event.type == 'click') {
+            let item = event.target;
+            let index = parseInt(item.getAttribute('list_index'));
+            this.set_selected_index(index);
+
+        }
+        else if (event.type == 'focusout') {
+
+        }
+        else if (event.type == 'keydown') {
+            if (event.key == 'ArrowUp') {
+                if (this.selected_index <= 0) return;
+                this.set_selected_index(this.selected_index - 1);
+            }
+            else if (event.key == 'ArrowDown') {
+                if (this.selected_index >= this.items.length) return;
+                this.set_selected_index(this.selected_index + 1);
+
+            }
+        }
+
+    }
+    get_selected_image() {
+        return this.image_ids[this.selected_index];
     }
 
 }
@@ -431,9 +483,8 @@ var save_button = document.getElementById("save");
 save_button.addEventListener('click', saveLabels);
 
 
-/** @type {HTMLSelectElement} */
-var image_selector = document.getElementById("image_id_select");
-image_selector.addEventListener('change', refreshCurrentImage);
+var image_selector_div = document.getElementById("image-selector");
+var image_selector = new ImageSelector(image_selector_div, refreshCurrentImage);
 
 var displayed_image_ids = [];
 var current_image_set = null;
@@ -493,18 +544,9 @@ async function saveLabels() {
 
 
 async function refreshCurrentImage() {
-    current_image_id = displayed_image_ids[image_selector.selectedIndex];
+    current_image_id = image_selector.get_selected_image();
     current_image_set = image_set_selector.value;
 
-    //un-highlight the previously selected image Id, and highlight the new one
-    let old_option = image_selector.querySelector("option[selected]");
-    if (old_option) {
-        old_option.removeAttribute("selected");
-    }
-    let new_option = image_selector.options[image_selector.selectedIndex];
-    if (new_option != null) {
-        new_option.setAttribute("selected", "true");
-    }
     
     let image_blob = await server.getImage(current_image_set, current_image_id);
 
@@ -549,16 +591,7 @@ async function updateImageSelector() {
     sessionStorage.setItem('image_set', image_set);
     
     displayed_image_ids = await server.getImageIds(image_set);
-    let image_names = [];
-    for (let i = 0; i < displayed_image_ids.length; i++) {
-        let image_id = displayed_image_ids[i];
-        let date = image_id[1];
-        let image_num = image_id.slice(2);
-        let image_name = `${i} ${date.toLocaleString()} ${image_num}`;
-        image_names.push(image_name);
-    }
-    
-    updateSelector(image_selector, image_names);
+    image_selector.set_image_ids(displayed_image_ids);
     
 }
 
