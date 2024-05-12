@@ -169,18 +169,18 @@ button:hover {
     z-index: 1;
 }
 
-.idselect {
+.image-selector {
     font-size: 16px;
     color: black;
     background-color: white;
 
 }
 
-.idselect option {
+.image-selector option {
     background-color: whitesmoke;
 }
 
-.idselect option[selected] {
+.image-selector option[selected] {
     background-color: green;
 
 }
