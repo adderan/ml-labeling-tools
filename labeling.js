@@ -334,7 +334,6 @@ class ImageSelector {
         this.change_callback = change_callback;
         this.root_div = root_div;
 
-        this.root_div.classList.add('image-selector');
         this.image_id_list = document.createElement("ol");
 
         this.image_id_list.style.overflow_y = "scroll";

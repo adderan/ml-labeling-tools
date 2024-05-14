@@ -176,11 +176,12 @@ button:hover {
 
 }
 
-.image-selector option {
-    background-color: whitesmoke;
+.image-selector li {
+    background-color: white;
+    border-radius: 5px;
 }
 
-.image-selector option[selected] {
+.image-selector li[selected] {
     background-color: green;
 
 }
