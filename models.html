@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <base href=".">
+        <!--title>IntelliwaterAI Machine Learning Dashboard</title-->
+        <link rel="stylesheet" type="text/css" href="ml_dashboard.css">
+        <!--link rel="icon" href="figure_40_cyanobacteria_dolichospermum_circinale_usgs_ofr20151164_ann_st_amand_l.webp" type="image/x-icon"-->
+    </head>
+    <body>
+        <header><!--h1>AI Dashboard</h1--></header>
+        <nav>
+            <ul>
+                <li><a href="labeling.html">Labeling</a></li>
+                <li><a href="">Clustering</a></li>
+                <li><a href="models.html">Models</a></li>
+                <li><label id="connection_status">Not logged in.</label></li>
+                <li><button id="login" class="login-button">Server Credentials</button></li>
+            </ul>
+
+        </nav>
+
+        <div>
+            <label>Model: 
+                <select id="model-select" class="drop-down-select"></select>
+            </label>
+        </div>
+        <canvas id="chart"></canvas>
+        <script type="module" src="models.js"></script>
+
+
+    </body>
+</html>
