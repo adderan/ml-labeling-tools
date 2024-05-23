@@ -1,16 +1,16 @@
-import {MLServer} from "./MLServer.js";
+import {ServerLoginPane, MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
 
 class LabelEditorCanvas {
-    constructor(canvas, image, server) {
+    constructor(canvas, server) {
         this.canvas = canvas;
 
         /** @type {CanvasRenderingContext2D} */
         this.context = this.canvas.getContext("2d");
 
         this.server = server;
-        this.image = image;
+        this.image = new Image();
         this.labels = [];
         this.target_label_set = null;
         this.current_image_id = null;
@@ -47,6 +47,21 @@ class LabelEditorCanvas {
         this.canvas.addEventListener('mousedown', this);
     }
 
+    setImage(image_id) {
+        this.current_image_id = image_id;
+        let image_blob_promise = server.getImage(this.current_image_set, this.current_image_id);
+        let image_url_promise = image_blob_promise.then(
+            (image_blob) => {
+                URL.createObjectURL(image_blob);
+            }
+        );
+        image_url_promise.then((image_url) => {
+            this.image.src = image_url;
+            this.update_labels();
+        });
+
+    }
+
     toCanvasCoordinates(x0, y0) {
         let scale = this.display_width / this.image.width;
         let xp = x0 * scale; 
@@ -60,6 +75,11 @@ class LabelEditorCanvas {
         let x0 = xp / scale;
         let y0 = yp / scale;
         return [x0, y0];
+    }
+
+    setNeutralState() {
+        this.state = this.states.NEUTRAL;
+        this.canvas.style.cursor = 'auto';
     }
 
     handleEvent(event) {
@@ -176,7 +196,7 @@ class LabelEditorCanvas {
         if (event.key == 'Escape') {
             this.class_input.style.visibility = 'hidden';
             this.class_input.blur();
-            this.state = this.states.NEUTRAL;
+            this.setNeutralState();
         }
         else if (event.key == 'Enter') {
             let classname = this.class_input.value;
@@ -193,7 +213,7 @@ class LabelEditorCanvas {
 
 
             this.labels.push(new_label);
-            this.state = this.states.NEUTRAL;
+            this.setNeutralState();
             this.class_input.style.visibility = "hidden";
             this.class_input.blur();
             this.update();
@@ -226,7 +246,6 @@ class LabelEditorCanvas {
         }
         else {
             this.state = this.states.NEUTRAL;
-            this.canvas.style.cursor = 'auto';
             this.canvas.removeEventListener('mousemove', this);
             this.update();
 
@@ -237,7 +256,7 @@ class LabelEditorCanvas {
         this.canvas.style.cursor = 'se-resize';
     }
 
-    async update_labels(labels) {
+    async update_labels() {
         this.labels = await server.getImageLabels(current_image_set, current_image_id);
         this.labels = this.labels.filter((label) => this.enabled_label_sets.includes(label.label_set));
         this.update();
@@ -417,32 +436,31 @@ class ImageSelector {
 
 }
 
-/** @type {HTMLButtonElement} */
-var goButton = document.getElementById("go")
-//goButton.addEventListener('click', go_to_position);
+
+
+let server = new MLServer(
+    sessionStorage.getItem('server_url'),  
+    sessionStorage.getItem('database_name'), 
+    sessionStorage.getItem('username'), 
+    sessionStorage.getItem('password')
+);
+
+let login_pane = new ServerLoginPane(server);
 
 /** @type {HTMLButtonElement} */
-var connectButton = document.getElementById('connect');
-connectButton.addEventListener('click', connectServer);
-
-
-var server = null;
-if (sessionStorage.getItem('username') != null) {
-    server = new MLServer(sessionStorage.getItem('server_url'),  sessionStorage.getItem('database_name'), sessionStorage.getItem('username'), sessionStorage.getItem('password'));
+let credentials_button = document.getElementById('credentials-button');
+credentials_button.onclick = (event) => {
+    login_pane.show();
 }
 
-var current_image = new Image();
-//current_image.addEventListener('load', () => label_editor_canvas.update());
-
+let image_ids = null;
+var image_sets = [];
 
 /** @type {HTMLCanvasElement} */
 var canvas = document.getElementById("canvas")
 
-var label_editor_canvas = new LabelEditorCanvas(canvas, current_image, server);
+var label_editor_canvas = new LabelEditorCanvas(canvas, server);
 
-/** @type {HTMLButtonElement} */
-var refreshButton = document.getElementById("refresh");
-refreshButton.addEventListener('click', () => refreshCurrentImage);
 
 /** @type {HTMLButtonElement} */
 var clear_button = document.getElementById("clear");
@@ -456,17 +474,43 @@ draw_box_button.addEventListener('click', () => label_editor_canvas.enterDrawBox
 
 /** @type {HTMLSelectElement} */
 var image_set_selector = document.getElementById("image_set_select");
-image_set_selector.addEventListener('change', updateImageSelector);
+image_set_selector.addEventListener('change', (event) => {
+        let image_set = image_sets[image_set_selector.selectedIndex];
+        image_ids = server.getImageIds(image_set);
+        image_selector.set_image_ids(image_ids);
+        label_editor_canvas.current_image_set = image_set;
+    }
+);
+server.getImageSets().then((image_sets) => {
+    image_sets.map(
+        (image_set) => {
+            image_set_selector.options.add(new Option(image_set, image_set));
+        }
+    );
+}).then(() => {
+    image_set_selector.dispatchEvent(new Event('change'));
+
+});
+
+
 
 ///** @type {HTMLSelectElement} */
-//var source_label_set_selector = document.getElementById("source_label_set_select");
-var source_label_set_selector = new CheckBoxList(
+let source_label_set_selector = new CheckBoxList(
     document.getElementById("source_label_set_select"),
     "Source Label Sets", 
     () => {
         label_editor_canvas.enabled_label_sets = source_label_set_selector.get_selected_items();
     }, 
-    true);
+    true
+);
+server.getLabelSets().then((label_sets) => {
+    label_sets.map(
+        (label_set) => {
+            source_label_set_selector.add_item(label_set);
+        }
+    );
+});
+
 
 
 /** @type {HTMLInputElement} */
@@ -484,47 +528,23 @@ save_button.addEventListener('click', saveLabels);
 
 
 var image_selector_div = document.getElementById("image-selector");
-var image_selector = new ImageSelector(image_selector_div, refreshCurrentImage);
+var image_selector = new ImageSelector(
+    image_selector_div, 
+    (selected_index) => {
+        let image_id = image_ids[selected_index];
+        this.label_editor_canvas.setImage(image_id);
 
-var displayed_image_ids = [];
-var current_image_set = null;
-var current_image_id = null;
-
-var current_image_labels = [];
-var labels_buffer = [];
+    }
+);
 
 
 
-await refreshInterface();
 
 if (sessionStorage.getItem('image_set') != null) {
     image_set_selector.value = sessionStorage.getItem('image_set');
 
 }
 
-
-
-async function refreshInterface() {
-    await setLoginStatus();
-
-    let image_sets = await server.getImageSets();
-    updateSelector(image_set_selector, image_sets);
-
-    let label_sets = await server.getLabelSets();
-    for (let label_set of label_sets) {
-        if (source_label_set_selector.has_item(label_set)) continue;
-        source_label_set_selector.add_item(label_set);
-    }
-
-    source_label_set_selector.dispatchEvent(new Event('change'));
-
-    updateImageSelector();
-    refreshCurrentImage();
-}
-
-async function saveLabel(label) {
-    server.setLabel(target_label_set_input.value, current_image_set, current_image_id, label);
-}
 
 async function saveLabels() {
     let new_labels = label_editor_canvas.get_labels();
@@ -540,60 +560,6 @@ async function saveLabels() {
 
 }
 
-
-
-
-async function refreshCurrentImage() {
-    current_image_id = image_selector.get_selected_image();
-    current_image_set = image_set_selector.value;
-
-    
-    let image_blob = await server.getImage(current_image_set, current_image_id);
-
-    let image_url = URL.createObjectURL(image_blob);
-    current_image.src = image_url;
-
-    
-    label_editor_canvas.current_image_id = current_image_id;
-    label_editor_canvas.current_image_set = current_image_set;
-    label_editor_canvas.target_label_set = target_label_set_input.value;
-    label_editor_canvas.update_labels();
-
-}
-
-function updateSelector(selector, new_items) {
-    for (let i = selector.options.length; i >= 0; i--) {
-        selector.options.remove(i);
-    }
-
-    for (let item of new_items) {
-        selector.options.add(new Option(item, item));
-    }
-    selector.selectedIndex = 0;
-    selector.dispatchEvent(new Event('change'));
-
-}
-
-function getImageName(image_id) {
-    let image_name = [];
-    for (let component of image_id) {
-        if (component instanceof Date) {
-            image_name.push(component.toISOString());
-        }
-        else {
-            image_name.push(component.toString());
-        }
-    }
-    return image_name.join(' ');
-}
-async function updateImageSelector() {
-    let image_set = image_set_selector.value;
-    sessionStorage.setItem('image_set', image_set);
-    
-    displayed_image_ids = await server.getImageIds(image_set);
-    image_selector.set_image_ids(displayed_image_ids);
-    
-}
 
 async function setLoginStatus() {
     let connection_status = document.getElementById("connection_status");
@@ -620,54 +586,4 @@ async function setLoginStatus() {
 
 }
 
-async function connectServer() {
-    let server_field = document.getElementById("server_url");
-    let user_field = document.getElementById("username");
-    let password_field = document.getElementById("password");
-    let connection_status = document.getElementById("connection_status");
 
-    server_url = `${server_field.value}/infinitydb/data`
-    server = new MLServer(server_url, "ai/labels", user_field.value, password_field.value)
-
-    
-    sessionStorage.setItem('server_url', server_url);
-    sessionStorage.setItem('username', user_field.value);
-    sessionStorage.setItem('password', password_field.value);
-    sessionStorage.setItem('database_name', 'ai/labels');
-    
-
-    let login_pane = document.getElementById("loginpane")
-    login_pane.style.display = "none";
-
-    setLoginStatus();
-
-}
-
-
-function showLoginpane() {
-    document.getElementById('loginpane').style.display='block';
-}
-function hideLoginpane() {
-    document.getElementById('loginpane').style.display='none';
-}
-
-function logoutServer() {
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('password');
-    sessionStorage.removeItem('server_url');
-    server = null;
-    let connection_status = document.getElementById("connection_status");
-    connection_status.innerHTML = "Not logged in.";
-
-    let login_button = document.getElementById("login");
-    login_button.onclick = show_loginpane;
-    login_button.innerHTML = "Login";
-}
-
-function setDisconnectedStatus() {
-    document.getElementById("connection_status").innerHTML = "Must login first."
-}
-
-
-window.onresize = function() {
-}
