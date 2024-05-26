@@ -207,71 +207,76 @@ class LabelEditor {
     display_label_editing_popup(x, y, label_index) {
         let label = this.labels[label_index];
         if (this.label_editing_popup != null) return;
-        this.label_editing_popup = document.createElement('div');
-        this.label_editing_popup.classList.add("label-popup");
-        this.label_editing_popup.style.left = `${x}px`;
-        this.label_editing_popup.style.top = `${y + 50}px`;
+        //this.label_editing_popup = document.createElement('div');
+        //this.label_editing_popup.classList.add("label-popup");
+        //this.label_editing_popup.style.left = `${x}px`;
+        //this.label_editing_popup.style.top = `${y + 50}px`;
 
-        let text_area = document.createElement("div");
-        text_area.classList.add("text");
+        //let text_area = document.createElement("div");
+        //text_area.classList.add("text");
 
-        let label_class = document.createElement("p");
-        label_class.innerHTML = `Class: ${label.classname}`;
-        let label_set_name = document.createElement("p");
-        label_set_name.innerHTML = `Label Set: ${label.label_set}`;
+        //let label_class = document.createElement("p");
+        //label_class.innerHTML = `Class: ${label.classname}`;
+        //let label_set_name = document.createElement("p");
+        //label_set_name.innerHTML = `Label Set: ${label.label_set}`;
 
-        let label_coords = document.createElement("p");
-        label_coords.innerHTML = `Coords: (${label.xmin}, ${label.ymin}) (${label.xmax}, ${label.ymax})`;
+        //let label_coords = document.createElement("p");
+        //label_coords.innerHTML = `Coords: (${label.xmin}, ${label.ymin}) (${label.xmax}, ${label.ymax})`;
 
-        text_area.appendChild(label_class);
-        text_area.appendChild(label_set_name);
-        text_area.appendChild(label_coords);
+        //text_area.appendChild(label_class);
+        //text_area.appendChild(label_set_name);
+        //text_area.appendChild(label_coords);
 
 
-        let buttons_area = document.createElement("div");
-        buttons_area.classList.add("buttons");
+        //let buttons_area = document.createElement("div");
+        //buttons_area.classList.add("buttons");
 
-        /** @type {HTMLButtonElement} */
-        let label_save_button = document.createElement("button");
-        label_save_button.textContent = "Save";
-        label_save_button.onclick = (event) => {
-            console.log(this.target_label_set, this.current_image_set, this.current_image_id);
-            this.server.setLabel(this.target_label_set, this.image_set, this.image_id, label);
-            this.remove_label_editing_popup();
-            this.updateLabels();
+        ///** @type {HTMLButtonElement} */
+        //let label_save_button = document.createElement("button");
+        //label_save_button.textContent = "Save";
+        //label_save_button.onclick = (event) => {
+            //console.log(this.target_label_set, this.current_image_set, this.current_image_id);
+            //this.server.setLabel(this.target_label_set, this.image_set, this.image_id, label);
+            //this.remove_label_editing_popup();
+            //this.updateLabels();
 
-        };
+        //};
 
-        /** @type {HTMLButtonElement} */
-        let label_delete_button = document.createElement("button");
-        label_delete_button.textContent = "Delete";
-        label_delete_button.classList.add("dangerous-button");
-        label_delete_button.onclick = (event) => {
-            //this.labels.splice(label_index, 1);
-            if (this.target_label_set == null) {
-                alert("Specify target label set.");
-                return;
-            }
-            this.server.deleteLabel(this.target_label_set, this.image_set, this.image_id, label);
-            this.remove_label_editing_popup();
-            this.updateLabels();
-        }
+        ///** @type {HTMLButtonElement} */
+        //let label_delete_button = document.createElement("button");
+        //label_delete_button.textContent = "Delete";
+        //label_delete_button.classList.add("dangerous-button");
+        //label_delete_button.onclick = (event) => {
+            ////this.labels.splice(label_index, 1);
+            //if (this.target_label_set == null) {
+                //alert("Specify target label set.");
+                //return;
+            //}
+            //this.server.deleteLabel(this.target_label_set, this.image_set, this.image_id, label);
+            //this.remove_label_editing_popup();
+            //this.updateLabels();
+        //}
 
-        /** @type {HTMLButtonElement} */
-        let label_cancel_button = document.createElement("button");
-        label_cancel_button.textContent = "Cancel";
-        label_cancel_button.onclick = (event) => {
-            this.remove_label_editing_popup();
-        }
+        ///** @type {HTMLButtonElement} */
+        //let label_cancel_button = document.createElement("button");
+        //label_cancel_button.textContent = "Cancel";
+        //label_cancel_button.onclick = (event) => {
+            //this.remove_label_editing_popup();
+        //}
 
-        buttons_area.appendChild(label_save_button);
-        buttons_area.appendChild(label_cancel_button);
-        buttons_area.appendChild(label_delete_button);
+        //buttons_area.appendChild(label_save_button);
+        //buttons_area.appendChild(label_cancel_button);
+        //buttons_area.appendChild(label_delete_button);
 
-        this.label_editing_popup.appendChild(text_area);
-        this.label_editing_popup.appendChild(buttons_area);
+        //this.label_editing_popup.appendChild(text_area);
+        //this.label_editing_popup.appendChild(buttons_area);
         
-        this.canvas.parentElement.appendChild(this.label_editing_popup);
+        //this.canvas.parentElement.appendChild(this.label_editing_popup);
+
+        let popup_template = document.getElementById("label-editing-popup");
+
+        this.label_editing_popup = popup_template.content.cloneNode();
+        document.appendChild(this.label_editing_popup);
 
     }
 

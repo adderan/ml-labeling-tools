@@ -1,0 +1,65 @@
+<html>
+
+<template id="login-pane">
+    <div id="loginpane" class="modal">
+        <div class="modal-content animate">
+            <label>Server:
+                <input class="modal-input" id="server_url" autocomplete="https://localhost:37411" />
+            </label>
+            <label>User
+                <input id="username" class="modal-input">
+            </label>
+            <label>Password
+                <input id="password" type="password" class="modal-input">
+            </label>
+            <button class="modal-button" id="connect">Connect</button>
+            <button class="modal-button cancelbtn" id="cancel"
+                onclick="document.getElementById('loginpane').style.display='none'">Cancel</button>
+        </div>
+    </div>
+</template>
+
+<template id="label-editing-popup">
+    <style>
+        div {
+            display: grid;
+            grid-template-rows: 60% 40%;
+            grid-template-columns: 25% 50% 25%;
+            justify-items: center;
+            align-items: center;
+            justify-content: center;
+
+            position: absolute;
+            background-color: #ccc;
+            width: 400px;
+            height: 200px;
+            padding: 0px;
+            border-radius: 5px;
+            visibility: visible;
+            -webkit-animation: fadeIn 0.5s;
+            animation: fadeIn 0.5s;
+        }
+        div .text {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        div .buttons {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        div button {
+            margin: 5px;
+        }
+
+    </style>
+    <div>
+        <div class="text"></div>
+        <div class="buttons">
+            <button id="save-button">Save</button>
+            <button id="delete-button">Delete</button>
+            <button id="cancel-button">Cancel</button>
+        </div>
+    </div>
+</template>
+
+</html>
