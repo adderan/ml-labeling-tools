@@ -1,7 +1,7 @@
 import {ServerLoginPane, MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
-
+customElements.define('checkbox-list', CheckBoxList);
 class LabelEditor {
     constructor(server) {
         this.server = server;
@@ -54,15 +54,14 @@ class LabelEditor {
 
         });
 
+        /** @type {CheckBoxList} */
+        this.source_label_set_selector = document.getElementById('source_label_set_select');
+        this.source_label_set_selector.onchange = () => {
+            this.enabled_label_sets = this.source_label_set_selector.get_selected_items();
+            this.updateLabels();
+        };
 
-        this.source_label_set_selector = new CheckBoxList(
-            document.getElementById("source_label_set_select"),
-            "Source Label Sets", 
-            () => {
-                this.enabled_label_sets = this.source_label_set_selector.get_selected_items();
-            }, 
-            true
-        );
+
         this.server.getLabelSets().then((label_sets) => {
             this.label_sets = label_sets;
             this.label_sets.map(
@@ -341,6 +340,7 @@ class LabelEditor {
 
     async updateLabels() {
         this.labels = await this.server.getImageLabels(this.image_set, this.image_id);
+        console.log(this.enabled_label_sets);
         this.labels = this.labels.filter((label) => this.enabled_label_sets.includes(label.label_set));
         this.update();
     }

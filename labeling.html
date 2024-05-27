@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <base href=".">
-        <!--title>Boilerbay Machine Learning Dashboard</title-->
+        <title>Boilerbay Machine Learning Dashboard</title>
         <link rel="stylesheet" type="text/css" href="ml_dashboard.css">
         <!--link rel="icon" href="figure_40_cyanobacteria_dolichospermum_circinale_usgs_ofr20151164_ann_st_amand_l.webp" type="image/x-icon"-->
     </head>
@@ -20,29 +20,12 @@
 
         </nav>
 
-        <div id="loginpane" class="modal">
-            <div class="modal-content animate">
-                <label>Server:
-                    <input class="modal-input" id="server_url" autocomplete="https://localhost:37411"/>
-                </label>
-                <label>User
-                    <input id="username" class="modal-input">
-                </label>
-                <label>Password
-                    <input id="password" type="password" class="modal-input">
-                </label>
-                <button class="modal-button" id="connect">Connect</button>
-                <button class="modal-button cancelbtn" id="cancel" onclick="document.getElementById('loginpane').style.display='none'">Cancel</button>
-            </div>
-        </div>
-
         <div>
             <label>Image Set: 
                 <select id="image_set_select" class="drop-down-select">
                 </select>
             </label>
-            <div id="source_label_set_select">
-            </div>
+            <checkbox-list id="source_label_set_select" label-text="Source Label Sets" default-checked='true'></checkbox-list>
             <label>Target Label Set
                 <input id="target_label_set">
                 </select>
