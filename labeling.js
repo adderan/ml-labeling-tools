@@ -1,7 +1,6 @@
 import {ServerLoginPane, MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
 
-customElements.define('checkbox-list', CheckBoxList);
 class LabelEditor {
     constructor(server) {
         this.server = server;
@@ -46,7 +45,8 @@ class LabelEditor {
             this.image_sets = image_sets;
             this.image_sets.map(
                 (image_set) => {
-                    this.image_set_selector.options.add(new Option(image_set, image_set));
+                    let option = new Option(image_set, image_set);
+                    this.image_set_selector.options.add(option);
                 }
             );
         }).then(() => {
@@ -88,15 +88,14 @@ class LabelEditor {
         this.save_button.addEventListener('click', this.saveLabels);
 
 
-        this.image_selector_div = document.getElementById("image-selector");
-        this.image_selector = new ImageSelector(
-            this.image_selector_div, 
-            (selected_index) => {
-                this.image_id = this.image_ids[selected_index];
-                this.setImage(this.image_id);
+        /** @type {ImageSelector} */
+        this.image_selector = document.getElementById("image-selector");
+        this.image_selector.onchange = () => {
+            let selected_index = this.image_selector.selected_index;
+            this.image_id = this.image_ids[selected_index];
+            this.setImage(this.image_id);
 
-            }
-        );
+        };
 
 
         this.display_width = 400;
@@ -126,6 +125,7 @@ class LabelEditor {
         this.canvas.addEventListener('click', this);
         this.canvas.addEventListener('mouseup', this);
         this.canvas.addEventListener('mousedown', this);
+        this.canvas.addEventListener('wheel', this);
     }
 
     async updateImageSet() {
@@ -183,6 +183,7 @@ class LabelEditor {
     }
 
     _handleEventNeutral(event) {
+        console.log(event);
         if (event.type == 'click') {
             if (this.label_editing_popup && event.target != this.label_editing_popup) {
                 this.remove_label_editing_popup();
@@ -194,6 +195,28 @@ class LabelEditor {
                 }
             }
         }
+    
+        else if (event.type == 'wheel') {
+            let new_display_width = this.display_width + event.wheelDeltaY;
+            event.preventDefault();
+            this.zoom(new_display_width);
+
+        }
+    }
+
+    zoom(new_display_width, animation_length=300.0) {
+        let start = Date.now();
+        let step = (new_display_width - this.display_width)/animation_length;
+        let zoom_fn = (t1) => {
+            let t2 = Date.now();
+            if (t2 < start + animation_length) {
+                this.display_width += step * (t2 - t1);
+                this.update();
+                window.requestAnimationFrame(() => {zoom_fn(t2)});
+            }
+        }
+
+        window.requestAnimationFrame(() => {zoom_fn(start);});
     }
 
     remove_label_editing_popup() {
@@ -374,7 +397,7 @@ class LabelEditor {
         }
         this.box_labels = [];
 
-        let scale = this.display_width / this.image.width;
+        let scale = Math.round(this.display_width) / this.image.width;
         this.display_height = scale * this.image.height;
 
         this.canvas.width = this.canvas.parentElement.clientWidth;
@@ -439,15 +462,14 @@ class LabelEditor {
         
 }
 
-class ImageSelector {
-    constructor(root_div, change_callback) {
-        this.change_callback = change_callback;
-        this.root_div = root_div;
+class ImageSelector extends HTMLElement {
+    constructor() {
+        super();
 
         this.image_id_list = document.createElement("ol");
 
         this.image_id_list.style.overflow_y = "scroll";
-        this.root_div.appendChild(this.image_id_list);
+        this.appendChild(this.image_id_list);
 
         this.selected_index = null;
         this.image_ids = [];
@@ -469,6 +491,7 @@ class ImageSelector {
     }
 
     set_image_ids(image_ids) {
+        console.log(image_ids);
 
         this.image_ids = image_ids;
 
@@ -496,7 +519,7 @@ class ImageSelector {
         }
         this.selected_index = index;
         this.items[index].setAttribute('selected', 'selected');
-        this.change_callback(this.selected_index);
+        this.dispatchEvent(new Event('change'));
         //this.items[this.selected_index].scrollIntoView({behavior: "smooth", block: "center"});
         //window.scrollTo(0,0);
 
@@ -530,6 +553,9 @@ class ImageSelector {
 
 }
 
+customElements.define('checkbox-list', CheckBoxList);
+customElements.define('image-selector', ImageSelector);
+customElements.define('server-login-pane', ServerLoginPane);
 
 
 let server = new MLServer(
@@ -539,7 +565,9 @@ let server = new MLServer(
     sessionStorage.getItem('password')
 );
 
-let login_pane = new ServerLoginPane(server);
+let login_pane = document.querySelector('server-login-pane');
+login_pane.server = server;
+login_pane.loadCredentials();
 
 /** @type {HTMLButtonElement} */
 let credentials_button = document.getElementById('credentials-button');

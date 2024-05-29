@@ -2,53 +2,48 @@ import {idb} from "./infinitydb/src/javascript/infinitydb_access.js";
 
 const INTERFACE = "com.infinitydb.ai";
 
-export class ServerLoginPane {
-    constructor(server) {
-        this.server = server;
-        this.root_div = document.createElement('div');
-        this.root_div.classList.add('modal');
+export class ServerLoginPane extends HTMLElement {
+    constructor() {
+        super();
+        this.server = null;
 
         this.content_div = document.createElement('div');
-        this.content_div.classList.add('modal-content', 'animate');
-        this.root_div.appendChild(this.content_div);
+        this.content_div.classList.add('content', 'animate');
+        this.appendChild(this.content_div);
 
         let server_label = document.createElement("label");
         server_label.textContent = "Server:";
         this.server_field = document.createElement('input');
-        this.server_field.classList.add('modal-input');
         server_label.appendChild(this.server_field);
         this.content_div.appendChild(server_label);
 
         let username_label = document.createElement('label');
         username_label.textContent = "Username:";
         this.username_field = document.createElement('input');
-        this.username_field.classList.add('modal-input');
         username_label.appendChild(this.username_field);
         this.content_div.appendChild(username_label);
 
         let password_label = document.createElement('label');
         password_label.textContent = "Password:";
         this.password_field = document.createElement('input');
-        this.password_field.classList.add('modal-input');
         password_label.appendChild(this.password_field);
         this.content_div.appendChild(password_label);
 
         
         let button_area = document.createElement('div');
-        button_area.classList.add('modal-button-area');
+        button_area.classList.add('button-area');
         this.connect_button = document.createElement('button');
         this.connect_button.textContent = "Connect";
-        this.connect_button.classList.add('modal-button');
 
         this.connect_button.onclick = (event) => {
-            this.save_credentials();
+            this.saveCredentials();
             this.hide();
         };
         button_area.appendChild(this.connect_button);
 
         this.cancel_button = document.createElement('button');
+        this.cancel_button.classList.add('cancel-button')
         this.cancel_button.textContent = "Cancel";
-        this.cancel_button.classList.add('modal-button', 'cancelbtn');
         this.cancel_button.onclick = (event) => {
             this.hide();
 
@@ -57,12 +52,10 @@ export class ServerLoginPane {
 
         this.content_div.appendChild(button_area);
 
-        document.body.appendChild(this.root_div);
-
-        this.load_credentials();
-
     }
-    save_credentials() {
+
+
+    saveCredentials() {
         let server_url = this.server_field.value;
         let db = "ai/labels";
         let username = this.username_field.value;
@@ -72,9 +65,14 @@ export class ServerLoginPane {
         sessionStorage.setItem('db', db);
         sessionStorage.setItem('username', username);
         sessionStorage.setItem('password', password);
-        this.server.set_credentials(server_url, db, username, password);
+        if (this.server) {
+            this.server.set_credentials(server_url, db, username, password);
+        }
+        else {
+            console.warn("No server attached to login pane, not logging in");
+        }
     }
-    load_credentials() {
+    loadCredentials() {
         let server_url = sessionStorage.getItem('server_url');
         let db = sessionStorage.getItem('db');
         let username = sessionStorage.getItem('username');
@@ -85,10 +83,10 @@ export class ServerLoginPane {
         this.server.set_credentials(server_url, db, username, password);
     }
     show() {
-        this.root_div.style.display = 'block';
+        this.style.display = 'block';
     }
     hide() {
-        this.root_div.style.display = 'none';
+        this.style.display = 'none';
     }
 }
 export class MLServer extends idb.Accessor {

@@ -9,6 +9,7 @@
     </head>
     <body>
         <header><!--h1>AI Dashboard</h1--></header>
+        <server-login-pane></server-login-pane>
         <nav>
             <ul>
                 <li><a href="labeling.html">Labeling</a></li>
@@ -21,10 +22,9 @@
         </nav>
 
         <div>
-            <label>Image Set: 
-                <select id="image_set_select" class="drop-down-select">
-                </select>
-            </label>
+
+            <label for="image_set_select">Image Set</label>
+            <select id="image_set_select"></select>
             <checkbox-list id="source_label_set_select" label-text="Source Label Sets" default-checked='true'></checkbox-list>
             <label>Target Label Set
                 <input id="target_label_set">
@@ -38,8 +38,7 @@
             </div>
         </div>
 
-        <div id="image-selector" style="float:left;width:30%;" class="image-selector">
-        </div>
+        <image-selector id="image-selector" style="float:left;width:30%;"></image-selector>
 
         <div style="float:right;width:70%; position:relative;">
             <canvas id="canvas" width="800" height="600" style="position:absolute;z-index:-1;background-color:white;"></canvas>

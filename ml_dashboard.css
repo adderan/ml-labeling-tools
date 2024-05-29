@@ -50,25 +50,49 @@ input {
 
 button {
     background-color: #04a5aa;
+    background-color: beige;
     color: white;
-    border: none;
+    color: black;
     padding: 5px 5px;
     border-radius: 4px;
     cursor: pointer;
+    font-family: serif;
+    font-size: 1rem;
 }
 
 button:hover {
     opacity: 0.8;
 }
 
-.login-button {
-    margin: 10px 10px;
-    position: absolute;
-    right: 5px;
+select {
+    background-color: beige;
+    text-align: center;
+    color: black;
+    padding: 8px;
+    font-size: 1.2rem;
+    width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    border: none;
 }
 
-/* The Modal (background) */
-.modal {
+select option {
+    position: absolute;
+    background-color: beige;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.login-button {
+    position: absolute;
+    right: 5px;
+    margin: 5px 5px;
+}
+
+
+server-login-pane {
     display: none;
     /* Hidden by default */
     position: fixed;
@@ -91,8 +115,8 @@ button:hover {
 }
 
 /* Modal Content/Box */
-.modal-content {
-    background-color: #fefefe;
+server-login-pane .content {
+    background-color: white;
     margin: 5% auto 15% auto;
     /* 5% from the top, 15% from the bottom and centered */
     border: 1px solid #888;
@@ -100,33 +124,61 @@ button:hover {
     padding: 16px;
     /* Could be more or less, depending on screen size */
 }
-/* Full-width input fields */
 
-.modal-input {
+server-login-pane .button-area {
+    text-align: center;
+    display: block;
+}
+server-login-pane input {
     width: 100%;
     padding: 12px 20px;
     margin: 8px 8px;
 }
-
-
-.modal-button-area {
-    text-align: center;
-    display: block;
-}
-
-.modal-button {
+server-login-pane button {
+    margin: 10px 10px;
     padding: 14px 20px;
-    margin: 8px 8px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+image-selector {
+    font-size: 16px;
+}
+
+image-selector ol {
+    overflow-y: scroll;
+    height: 100vh;
+    display: inline-block;
+    list-style: none;
+    cursor: pointer;
+}
+
+image-selector li {
+    border-radius: 5px;
+    padding: 3px;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+image-selector li[selected] {
+    background-color: rgba(147, 85, 228, 0.432);
 
 }
 
 
-.cancelbtn {
-    background-color: #f44336;
+
+
+li {
+    background-color: rgba(45, 136, 148, 0.082);
+}
+
+
+.cancel-button {
+    background-color: #f0a9a4;
 }
 
 /* Add Zoom Animation */
-.animate {
+server-login-pane .animate {
     -webkit-animation: animatezoom 0.3s;
     animation: animatezoom 0.3s
 }
@@ -150,48 +202,9 @@ button:hover {
     }
 }
 
-.drop-down-select {
-    background-color: #04AA6D;
-    color: white;
-    padding: 8px;
-    font-size: 16px;
-    border: none;
-}
 
-.drop-down-select option {
-    position: absolute;
-    background-color: #f1f1f1;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-    z-index: 1;
-}
 
-.image-selector {
-    font-size: 16px;
-    color: black;
-    background-color: white;
 
-}
-.image-selector ol {
-    overflow-y: scroll;
-    height: 100vh;
-    display: inline-block;
-    list-style: none;
-    cursor: pointer;
-}
-
-.image-selector li {
-    background-color: rgba(45, 136, 148, 0.082);
-    border-radius: 5px;
-    padding: 3px;
-    padding-right: 10px;
-    padding-left: 10px;
-}
-
-.image-selector li[selected] {
-    background-color: rgba(147, 85, 228, 0.432);
-
-}
 .dangerous-button {
     background-color: red;
 }
