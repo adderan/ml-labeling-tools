@@ -209,6 +209,7 @@ class LabelEditor {
         let step = (new_display_width - this.display_width)/animation_length;
         let zoom_fn = (t1) => {
             let t2 = Date.now();
+            console.log('frame time: ', t2 - t1);
             if (t2 < start + animation_length) {
                 this.display_width += step * (t2 - t1);
                 this.update();
@@ -576,7 +577,6 @@ credentials_button.onclick = (event) => {
 }
 
 let label_editor = new LabelEditor(server);
-
 
 
 

@@ -15,6 +15,7 @@
                 <li><a href="labeling.html">Labeling</a></li>
                 <li><a href="">Clustering</a></li>
                 <li><a href="models.html">Models</a></li>
+                <li><a href="inference.html">Inference</a></li>
                 <li><label id="connection_status">Not logged in.</label></li>
                 <li><button id="credentials-button" class="login-button">Server Credentials</button></li>
             </ul>
@@ -28,14 +29,12 @@
             <checkbox-list id="source_label_set_select" label-text="Source Label Sets" default-checked='true'></checkbox-list>
             <label>Target Label Set
                 <input id="target_label_set">
-                </select>
             </label>
             <button id="save">Save Labels</button>
             <button id="clear">Clear</button>
             <button id="draw_box">Draw Box</button>
             <button id="draw_mask">Draw Mask</button>
 
-            </div>
         </div>
 
         <image-selector id="image-selector" style="float:left;width:30%;"></image-selector>
@@ -44,8 +43,6 @@
             <canvas id="canvas" width="800" height="600" style="position:absolute;z-index:-1;background-color:white;"></canvas>
             <!--input id="class_input" style="position:absolute; visibility:hidden;" placeholder="class name"></input-->
         </div>
-        <!--p style="color:rgb(0, 17, 255);text-align:center;">{{ seq }}</p-->
-        <!--script type="module" src="intelliwaterai/infinitydb/access.js"></script-->
         <script type="module" src="labeling.js"></script>
 
 

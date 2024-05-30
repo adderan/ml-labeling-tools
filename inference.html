@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="ml_dashboard.css">
+    </head>
+    <style>
+        video {
+            height: 300px;
+            width: 300px;
+        }
+    </style>
+    <body>
+        <nav>
+            <ul>
+                <li><a href="labeling.html">Labeling</a></li>
+                <li><a href="">Clustering</a></li>
+                <li><a href="models.html">Models</a></li>
+                <li><a href="inference.html">Inference</a></li>
+                <li><label id="connection_status">Not logged in.</label></li>
+                <li><button id="credentials-button" class="login-button">Server Credentials</button></li>
+            </ul>
+
+        </nav>
+        <server-login-pane></server-login-pane>
+        <video id="video"></video>
+        <script src="inference.js" type="module"></script>
+    </body>
+</html>

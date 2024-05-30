@@ -2,9 +2,12 @@ import {MLServer, ServerLoginPane} from "./MLServer.js";
 import 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
 
 
+customElements.define('server-login-pane', ServerLoginPane);
 
-var server = new MLServer(null, null, null, null);
-var login_pane = new ServerLoginPane(server)
+let server = new MLServer(null, null, null, null);
+let login_pane = document.querySelector('server-login-pane');
+login_pane.server = server;
+login_pane.loadCredentials();
 
 
 let login_button = document.getElementById('login');
