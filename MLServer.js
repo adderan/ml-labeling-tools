@@ -142,6 +142,15 @@ export class MLServer extends idb.Accessor {
         }
         return metrics;
     }
+    async getModel(model_id) {
+        let [success, result, content_type] = await this.execute_get_blob_query(
+            [INTERFACE, "get_model"],
+            {
+                "_model_id": model_id
+            }
+        );
+        return result;
+    }
     async setLabel(label_set, image_set, image_id, label) {
         //image_id = idb.unflattenFromLists(image_id.slice(1));
         console.log(image_set);
