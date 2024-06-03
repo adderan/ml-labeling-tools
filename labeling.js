@@ -1,5 +1,6 @@
-import {ServerLoginPane, MLServer} from "./MLServer.js";
+import {MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
+import {NavBar, ServerLoginPane} from "./components.js";
 
 class LabelEditor {
     constructor(server) {
@@ -554,9 +555,7 @@ class ImageSelector extends HTMLElement {
 
 }
 
-customElements.define('checkbox-list', CheckBoxList);
 customElements.define('image-selector', ImageSelector);
-customElements.define('server-login-pane', ServerLoginPane);
 
 
 let server = new MLServer(
@@ -566,13 +565,14 @@ let server = new MLServer(
     sessionStorage.getItem('password')
 );
 
+/** @type {ServerLoginPane} */
 let login_pane = document.querySelector('server-login-pane');
 login_pane.server = server;
 login_pane.loadCredentials();
 
-/** @type {HTMLButtonElement} */
-let credentials_button = document.getElementById('credentials-button');
-credentials_button.onclick = (event) => {
+/** @type {NavBar} */
+let navbar = document.querySelector('my-navbar');
+navbar.credentials_button.onclick = (event) => {
     login_pane.show();
 }
 

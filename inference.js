@@ -1,8 +1,7 @@
-import {MLServer, ServerLoginPane} from "./MLServer.js";
+import {MLServer} from "./MLServer.js";
 import "https://cdnjs.cloudflare.com/ajax/libs/onnxruntime-web/1.10.0/ort.min.js";
-//import {ort} from "./ort.min.js";
+import { NavBar, ServerLoginPane } from "./components.js";
 
-customElements.define('server-login-pane', ServerLoginPane);
 
 let server = new MLServer(
     sessionStorage.getItem('server_url'),  

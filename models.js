@@ -1,8 +1,7 @@
-import {MLServer, ServerLoginPane} from "./MLServer.js";
+import {MLServer} from "./MLServer.js";
 import 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+import {NavBar, ServerLoginPane} from "./components.js";
 
-
-customElements.define('server-login-pane', ServerLoginPane);
 
 let server = new MLServer(null, null, null, null);
 let login_pane = document.querySelector('server-login-pane');
@@ -10,8 +9,8 @@ login_pane.server = server;
 login_pane.loadCredentials();
 
 
-let login_button = document.getElementById('login');
-login_button.onclick = (event) => {
+let navbar = document.querySelector('my-navbar');
+navbar.credentials_button.onclick = (event) => {
     login_pane.show();
 
 };
@@ -42,7 +41,6 @@ model_select_box.dispatchEvent(new Event('change'));
 async function plot_metrics() {
     let model_id = model_ids[model_select_box.selectedIndex];
     let metrics = await server.getModelMetrics(model_id);
-    console.log(metrics);
 
     let datasets = [];
     for (let metric_name of Object.keys(metrics[0])) {
