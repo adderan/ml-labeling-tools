@@ -184,7 +184,6 @@ class LabelEditor {
     }
 
     _handleEventNeutral(event) {
-        console.log(event);
         if (event.type == 'click') {
             if (this.label_editing_popup && event.target != this.label_editing_popup) {
                 this.remove_label_editing_popup();
@@ -192,7 +191,7 @@ class LabelEditor {
             for (let i = 0; i < this.box_labels.length; i++) {
                 let box_label = this.box_labels[i];
                 if (event.target == box_label) {
-                    this.display_label_editing_popup(event.target.offsetLeft, event.target.offsetTop, i);
+                    this.display_label_editing_popup(event, i);
                 }
             }
         }
@@ -210,7 +209,6 @@ class LabelEditor {
         let step = (new_display_width - this.display_width)/animation_length;
         let zoom_fn = (t1) => {
             let t2 = Date.now();
-            console.log('frame time: ', t2 - t1);
             if (t2 < start + animation_length) {
                 this.display_width += step * (t2 - t1);
                 this.update();
@@ -228,36 +226,34 @@ class LabelEditor {
 
     }
 
-    display_label_editing_popup(x, y, label_index) {
+    display_label_editing_popup(event, label_index) {
+        let x = event.offsetX + event.target.offsetLeft;
+        let y = event.offsetY + event.target.offsetTop;
+        console.log(x, y);
         let label = this.labels[label_index];
         if (this.label_editing_popup != null) return;
         this.label_editing_popup = document.createElement('dialog');
+        this.label_editing_popup.innerHTML = `
+            <div class='text'>
+                <p>Class: ${label.classname}</p>
+                <p>Label Set: ${label.label_set}</p>
+                <p>Coords: ${label.xmin}, ${label.ymin} -- ${label.xmax},${label.ymax}</p>
+            </div>
+            <div class='buttons'>
+                <button id='save'>Save</button>
+                <button id='cancel'>Cancel</button>
+                <button id='delete' class='dangerous-button'>Delete</button>
+            </div>
+
+        `;
         this.label_editing_popup.classList.add("label-popup");
-        this.label_editing_popup.style.left = `${x}px`;
-        this.label_editing_popup.style.top = `${y + 50}px`;
+        this.label_editing_popup.style.left = `${x-400}px`;
+        this.label_editing_popup.style.top = `${y+20}px`;
 
-        let text_area = document.createElement("div");
-        text_area.classList.add("text");
+        let label_save_button = this.label_editing_popup.querySelector('#save');
+        let label_cancel_button = this.label_editing_popup.querySelector('#cancel');
+        let label_delete_button = this.label_editing_popup.querySelector('#delete');
 
-        let label_class = document.createElement("p");
-        label_class.innerHTML = `Class: ${label.classname}`;
-        let label_set_name = document.createElement("p");
-        label_set_name.innerHTML = `Label Set: ${label.label_set}`;
-
-        let label_coords = document.createElement("p");
-        label_coords.innerHTML = `Coords: (${label.xmin}, ${label.ymin}) (${label.xmax}, ${label.ymax})`;
-
-        text_area.appendChild(label_class);
-        text_area.appendChild(label_set_name);
-        text_area.appendChild(label_coords);
-
-
-        let buttons_area = document.createElement("div");
-        buttons_area.classList.add("buttons");
-
-        /** @type {HTMLButtonElement} */
-        let label_save_button = document.createElement("button");
-        label_save_button.textContent = "Save";
         label_save_button.onclick = (event) => {
             this.server.setLabel(this.target_label_set, this.image_set, this.image_id, label);
             this.remove_label_editing_popup();
@@ -265,10 +261,6 @@ class LabelEditor {
 
         };
 
-        /** @type {HTMLButtonElement} */
-        let label_delete_button = document.createElement("button");
-        label_delete_button.textContent = "Delete";
-        label_delete_button.classList.add("dangerous-button");
         label_delete_button.onclick = (event) => {
             if (this.target_label_set == null) {
                 alert("Specify target label set.");
@@ -279,21 +271,12 @@ class LabelEditor {
             this.updateLabels();
         }
 
-        /** @type {HTMLButtonElement} */
-        let label_cancel_button = document.createElement("button");
-        label_cancel_button.textContent = "Cancel";
         label_cancel_button.onclick = (event) => {
             this.remove_label_editing_popup();
         }
 
-        buttons_area.appendChild(label_save_button);
-        buttons_area.appendChild(label_cancel_button);
-        buttons_area.appendChild(label_delete_button);
-
-        this.label_editing_popup.appendChild(text_area);
-        this.label_editing_popup.appendChild(buttons_area);
-        
         this.canvas.parentElement.appendChild(this.label_editing_popup);
+        this.label_editing_popup.show();
 
     }
 
@@ -491,7 +474,6 @@ class ImageSelector extends HTMLElement {
     }
 
     set_image_ids(image_ids) {
-        console.log(image_ids);
 
         this.image_ids = image_ids;
 

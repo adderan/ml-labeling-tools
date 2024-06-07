@@ -169,23 +169,30 @@ li {
 dialog {
     background-color:rgb(208, 224, 247);
     border-radius: 5px;
+    border: 2px black;
     animation: fadeIn 0.5s;
     -webkit-animation: fadeIn 0.5s;
+
 }
 
 .label-popup {
-    display: grid;
-    grid-template-rows: 60% 40%;
-    grid-template-columns: 25% 50% 25%;
-    justify-items: center;
-    align-items: center;
-    justify-content: center;
 
     position: absolute;
-    width: 30vw;
-    height: 25vh;
-    padding: 0px;
+    padding: 5px;
 }
+.label-popup .text {
+    display: flex;
+    flex-direction: column;
+}
+.label-popup .buttons {
+    display: flex;
+    flex-direction: row;
+
+}
+.label-popup button {
+    margin:5px;
+}
+
 @-webkit-keyframes fadeIn {
     from {opacity: 0;} 
     to {opacity: 1.0;}
@@ -196,15 +203,4 @@ dialog {
     to {opacity: 1.0 ;}
 }
 
-.label-popup .text {
-    grid-column: 2;
-    grid-row: 1;
-}
-.label-popup .buttons {
-    grid-row: 2;
-    grid-column: 2;
 
-}
-.label-popup button {
-    margin:5px;
-}
