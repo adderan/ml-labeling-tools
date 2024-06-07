@@ -4,7 +4,7 @@ import {NavBar, ServerLoginPane} from "./components.js";
 
 
 let server = new MLServer(null, null, null, null);
-let login_pane = document.querySelector('server-login-pane');
+let login_pane = document.querySelector('#server-login-pane');
 login_pane.server = server;
 login_pane.loadCredentials();
 

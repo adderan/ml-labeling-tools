@@ -231,7 +231,7 @@ class LabelEditor {
     display_label_editing_popup(x, y, label_index) {
         let label = this.labels[label_index];
         if (this.label_editing_popup != null) return;
-        this.label_editing_popup = document.createElement('div');
+        this.label_editing_popup = document.createElement('dialog');
         this.label_editing_popup.classList.add("label-popup");
         this.label_editing_popup.style.left = `${x}px`;
         this.label_editing_popup.style.top = `${y + 50}px`;
@@ -259,7 +259,6 @@ class LabelEditor {
         let label_save_button = document.createElement("button");
         label_save_button.textContent = "Save";
         label_save_button.onclick = (event) => {
-            console.log(this.target_label_set, this.current_image_set, this.current_image_id);
             this.server.setLabel(this.target_label_set, this.image_set, this.image_id, label);
             this.remove_label_editing_popup();
             this.updateLabels();
@@ -271,7 +270,6 @@ class LabelEditor {
         label_delete_button.textContent = "Delete";
         label_delete_button.classList.add("dangerous-button");
         label_delete_button.onclick = (event) => {
-            //this.labels.splice(label_index, 1);
             if (this.target_label_set == null) {
                 alert("Specify target label set.");
                 return;
@@ -566,14 +564,14 @@ let server = new MLServer(
 );
 
 /** @type {ServerLoginPane} */
-let login_pane = document.querySelector('server-login-pane');
+let login_pane = document.querySelector('#server-login-pane');
 login_pane.server = server;
 login_pane.loadCredentials();
 
 /** @type {NavBar} */
 let navbar = document.querySelector('my-navbar');
 navbar.credentials_button.onclick = (event) => {
-    login_pane.show();
+    login_pane.showModal();
 }
 
 let label_editor = new LabelEditor(server);

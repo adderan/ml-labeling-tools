@@ -22,55 +22,66 @@ export class NavBar extends HTMLElement {
 
 customElements.define('my-navbar', NavBar);
 
-export class ServerLoginPane extends HTMLElement {
+export class ServerLoginPane extends HTMLDialogElement {
     constructor() {
-        super();
+        self = super();
         this.server = null;
 
-        this.content_div = document.createElement('div');
-        this.content_div.classList.add('content', 'animate');
-        this.appendChild(this.content_div);
+        this.innerHTML = `
+            <label>Server:
+                <input id="server-field"></input>
+            </label>
+            <label>Username:
+                <input id="username-field"></input>
+            </label>
+            <label>Password:
+                <input id="password-field"></input>
+            </label>
+            <div id="button-area">
+                <button id="connect">Connect</button>
+                <button id="cancel" class='cancel'>Cancel</button>
+            </div>
 
-        let server_label = document.createElement("label");
-        server_label.textContent = "Server:";
-        this.server_field = document.createElement('input');
-        server_label.appendChild(this.server_field);
-        this.content_div.appendChild(server_label);
+            <style>
+                dialog[is="server-login-pane"]  {
+                    margin: 5% auto 15% auto;
+                    width: 60%;
+                    padding: 16px;
 
-        let username_label = document.createElement('label');
-        username_label.textContent = "Username:";
-        this.username_field = document.createElement('input');
-        username_label.appendChild(this.username_field);
-        this.content_div.appendChild(username_label);
+                    #button-area {
+                        text-align: center;
+                        display: block;
+                    }
+                    input {
+                        width: 100%;
+                        padding: 12px 20px;
+                        margin: 8px 8px;
+                    }
+                    button {
+                        margin: 10px 10px;
+                        padding: 14px 20px;
+                        font-size: 16px;
+                        font-weight: bold;
+                    }
+                }
+            </style>
+        `;
 
-        let password_label = document.createElement('label');
-        password_label.textContent = "Password:";
-        this.password_field = document.createElement('input');
-        password_label.appendChild(this.password_field);
-        this.content_div.appendChild(password_label);
-
-        
-        let button_area = document.createElement('div');
-        button_area.classList.add('button-area');
-        this.connect_button = document.createElement('button');
-        this.connect_button.textContent = "Connect";
+        this.server_field = this.querySelector('#server-field');
+        this.username_field = this.querySelector('#username-field');
+        this.password_field = this.querySelector('#password-field');
+        this.connect_button = this.querySelector('#connect');
+        this.cancel_button = this.querySelector('#cancel');
 
         this.connect_button.onclick = (event) => {
             this.saveCredentials();
-            this.hide();
+            this.close();
         };
-        button_area.appendChild(this.connect_button);
 
-        this.cancel_button = document.createElement('button');
-        this.cancel_button.classList.add('cancel-button')
-        this.cancel_button.textContent = "Cancel";
         this.cancel_button.onclick = (event) => {
-            this.hide();
+            this.close();
 
         };
-        button_area.appendChild(this.cancel_button);
-
-        this.content_div.appendChild(button_area);
 
     }
 
@@ -102,11 +113,5 @@ export class ServerLoginPane extends HTMLElement {
         this.password_field.value = password;
         this.server.set_credentials(server_url, db, username, password);
     }
-    show() {
-        this.style.display = 'block';
-    }
-    hide() {
-        this.style.display = 'none';
-    }
 }
-customElements.define('server-login-pane', ServerLoginPane);
+customElements.define('server-login-pane', ServerLoginPane, {extends: "dialog"});
