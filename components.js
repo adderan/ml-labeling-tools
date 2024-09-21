@@ -6,7 +6,7 @@ export class NavBar extends HTMLElement {
             <nav>
                 <ul>
                     <li><a href="labeling.html">Labeling</a></li>
-                    <li><a href="">Clustering</a></li>
+                    <li><a href="clustering.html">Clustering</a></li>
                     <li><a href="models.html">Models</a></li>
                     <li><a href="inference.html">Inference</a></li>
                     <li><label id="connection_status">Not logged in.</label></li>
