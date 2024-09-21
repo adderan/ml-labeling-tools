@@ -1,6 +1,6 @@
 import {MLServer} from "./MLServer.js";
 import { CheckBoxList } from "./js-ui-elements/CheckboxList.js";
-import {NavBar, ServerLoginPane} from "./components.js";
+import {NavBar, ServerLoginPane, ImageUploadPane} from "./components.js";
 
 class LabelEditor {
     constructor(server) {
@@ -557,6 +557,16 @@ navbar.credentials_button.onclick = (event) => {
 }
 
 let label_editor = new LabelEditor(server);
+
+const image_upload_button = document.querySelector('#upload_image');
+image_upload_button.addEventListener('click', 
+    () => {
+        const upload_pane = document.createElement('dialog', {is: 'image-upload-pane'});
+        document.body.appendChild(upload_pane);
+        upload_pane.showModal();
+
+    }
+);
 
 
 

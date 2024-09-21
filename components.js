@@ -22,6 +22,70 @@ export class NavBar extends HTMLElement {
 
 customElements.define('my-navbar', NavBar);
 
+export class ImageUploadPane extends HTMLDialogElement {
+    constructor() {
+        self = super();
+        this.setAttribute('image-upload-pane', true);
+
+        const header = document.createElement('header');
+        const headerText = document.createElement('h2');
+        headerText.textContent = 'Upload an Image';
+        header.appendChild(headerText);
+
+        const image_chooser = document.createElement("input", {type: 'file'});
+        image_chooser.type = 'file';
+
+        const image_name_input = document.createElement('input');
+        const image_set_select = document.createElement('select');
+        image_set_select.classList.add('dropdown-select');
+
+        const button_area = document.createElement('footer');
+        button_area.classList.add('buttons');
+        const upload_button = document.createElement('button');
+        upload_button.textContent = 'Upload';
+        button_area.appendChild(upload_button);
+
+        const cancel_button = document.createElement('button');
+        cancel_button.textContent = 'Cancel';
+        cancel_button.addEventListener('click', () => {
+            this.remove();
+        })
+        button_area.appendChild(cancel_button);
+
+
+        this.appendChild(header);
+        this.appendChild(image_chooser);
+        this.appendChild(image_name_input);
+        this.appendChild(image_set_select);
+        this.appendChild(button_area);
+
+        const style = document.createElement('style');
+        style.textContent = `
+            dialog[image-upload-pane] {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5em;
+
+                footer {
+                    display: flex;
+                    justify-content: center;
+                    gap: 0.5em;
+                }
+            }
+            
+        `;
+        this.appendChild(style);
+
+    }
+    setImageSets(image_sets) {
+        for (let image_set of image_sets) {
+            this.image_set_select.options.add(new Option(image_set, image_set));
+        }
+    }
+
+}
+customElements.define('image-upload-pane', ImageUploadPane, {extends: 'dialog'});
+
 export class ServerLoginPane extends HTMLDialogElement {
     constructor() {
         self = super();
