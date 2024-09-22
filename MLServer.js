@@ -2,9 +2,12 @@ import {idb} from "./infinitydb/src/javascript/infinitydb_access.js";
 
 const INTERFACE = "com.infinitydb.ai";
 
+const INFERENCE = new idb.Class("Inference");
+
 export class MLServer extends idb.Accessor {
-    constructor(server_url, db, username, password) {
-        super(server_url, db, username, password);
+    constructor(server_url, username, password) {
+        server_url = server_url + "/infinitydb/data";
+        super(server_url, "ai/labels", username, password);
 
     }
 
@@ -63,6 +66,28 @@ export class MLServer extends idb.Accessor {
             }
         );
         return result;
+    }
+    async getFeatureVectors(model_id) {
+        const prefix = [INFERENCE, model_id];
+        let [success, result, content_type] = await this.get_json(prefix);
+        console.log(result);
+        let feature_vectors = idb.flattenToLists(result);
+        return feature_vectors;
+    }
+    async getFeatureVector(model_id, image_set, image_id, clip_num) {
+        let [success, result, content_type] = await this.execute_query(
+            [INTERFACE, "get_feature_vector"],
+            {
+                "_model_id": model_id,
+                "_image_set": image_set,
+                "_image_id": image_id,
+                "_clip_num": clip_num
+            }
+        )
+        //const features = result["_features"];
+        //return features;
+        return result;
+
     }
     async setLabel(label_set, image_set, image_id, label) {
         //image_id = idb.unflattenFromLists(image_id.slice(1));

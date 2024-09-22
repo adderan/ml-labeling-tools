@@ -2,21 +2,67 @@ export class NavBar extends HTMLElement {
 
     constructor() {
         super();
-        this.innerHTML = `
-            <nav>
-                <ul>
-                    <li><a href="labeling.html">Labeling</a></li>
-                    <li><a href="clustering.html">Clustering</a></li>
-                    <li><a href="models.html">Models</a></li>
-                    <li><a href="inference.html">Inference</a></li>
-                    <li><label id="connection_status">Not logged in.</label></li>
-                    <li><button id="credentials-button" class="login-button">Server Credentials</button></li>
-                </ul>
+        this.server = null;
 
-            </nav>
+        this.nav = document.createElement("nav");
+        this.appendChild(this.nav);
+        this.ul = document.createElement("ul");
+        this.nav.appendChild(this.ul);
+
+
+        this.linknames = [
+            ["labeling.html", "Labeling"],
+            ["clustering.html", "Clustering"],
+            ["models.html", "Models"],
+            ["inference.html", "Inference"]
+        ];
+        for (let [link, name] of this.linknames) {
+            console.log(link, name);
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.setAttribute("href", link);
+            a.innerText = name;
+            li.appendChild(a);
+            this.ul.appendChild(li);
+        }
+
+        const connection_status_li = document.createElement("li");
+        this.connection_status = document.createElement("label");
+        this.connection_status.innerText = "Not logged in.";
+        connection_status_li.appendChild(this.connection_status);
+        this.ul.appendChild(connection_status_li);
+
+        const credentials_button_li = document.createElement("li");
+        this.credentials_button = document.createElement("button"); 
+        this.credentials_button.classList.add("login-button");
+        this.credentials_button.innerText = "Server Credentials";
+        credentials_button_li.appendChild(this.credentials_button);
+        this.ul.appendChild(credentials_button_li);
+
+        this.server_login_pane = document.createElement("dialog", {is: "server-login-pane"});
+        this.appendChild(this.server_login_pane);
+
+        this.credentials_button.onclick = (event) => {
+            this.server_login_pane.showModal();
+        }
+        this.server_login_pane.addEventListener("UserLoggedIn", 
+            (event) => {this.updateConnectionStatus()}
+        );
+
+    }
+    setServer(server) {
+        this.server = server;
+        this.server_login_pane.server = server;
+        this.server_login_pane.loadCredentials();
+
+    }
+
+    updateConnectionStatus() {
+        const full_server_url = 
+            this.server.server_url + "/infinitydb/data/";
+        this.connection_status.innerHTML = `
+            Connected to database <strong>${this.server.db}</strong> on <a style="all:revert" href="${full_server_url}">${this.server.server_url}</a> as user <strong>${this.server.username}</strong>.
         `;
-        this.credentials_button = this.querySelector('#credentials-button');
-
     }
 }
 
@@ -107,7 +153,7 @@ export class ServerLoginPane extends HTMLDialogElement {
             </div>
 
             <style>
-                dialog[is="server-login-pane"]  {
+                .server-login-pane  {
                     margin: 5% auto 15% auto;
                     width: 60%;
                     padding: 16px;
@@ -130,6 +176,7 @@ export class ServerLoginPane extends HTMLDialogElement {
                 }
             </style>
         `;
+        this.classList.add("server-login-pane");
 
         this.server_field = this.querySelector('#server-field');
         this.username_field = this.querySelector('#username-field');
@@ -157,11 +204,12 @@ export class ServerLoginPane extends HTMLDialogElement {
         let password = this.password_field.value;
 
         sessionStorage.setItem('server_url', server_url);
-        sessionStorage.setItem('db', db);
+        //sessionStorage.setItem('db', db);
         sessionStorage.setItem('username', username);
         sessionStorage.setItem('password', password);
         if (this.server) {
             this.server.set_credentials(server_url, db, username, password);
+            this.dispatchEvent(new Event("UserLoggedIn"));
         }
         else {
             console.warn("No server attached to login pane, not logging in");
@@ -169,13 +217,16 @@ export class ServerLoginPane extends HTMLDialogElement {
     }
     loadCredentials() {
         let server_url = sessionStorage.getItem('server_url');
-        let db = sessionStorage.getItem('db');
+        let db = "ai/labels";
         let username = sessionStorage.getItem('username');
         let password = sessionStorage.getItem('password');
+
         this.server_field.value = server_url;
         this.username_field.value = username;
         this.password_field.value = password;
         this.server.set_credentials(server_url, db, username, password);
+
+        this.dispatchEvent(new Event("UserLoggedIn"));
     }
 }
 customElements.define('server-login-pane', ServerLoginPane, {extends: "dialog"});

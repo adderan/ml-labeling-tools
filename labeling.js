@@ -538,23 +538,18 @@ class ImageSelector extends HTMLElement {
 customElements.define('image-selector', ImageSelector);
 
 
-let server = new MLServer(
-    sessionStorage.getItem('server_url'),  
-    sessionStorage.getItem('database_name'), 
-    sessionStorage.getItem('username'), 
-    sessionStorage.getItem('password')
-);
+let server = new MLServer(null, null, null);
 
-/** @type {ServerLoginPane} */
-let login_pane = document.querySelector('#server-login-pane');
-login_pane.server = server;
-login_pane.loadCredentials();
+
+///** @type {ServerLoginPane} */
+//let login_pane = document.querySelector('#server-login-pane');
+//login_pane.server = server;
+//login_pane.loadCredentials();
 
 /** @type {NavBar} */
-let navbar = document.querySelector('my-navbar');
-navbar.credentials_button.onclick = (event) => {
-    login_pane.showModal();
-}
+const navbar = document.querySelector('my-navbar');
+navbar.setServer(server);
+
 
 let label_editor = new LabelEditor(server);
 
