@@ -40,17 +40,25 @@ console.log(image_ids);
 async function downloadFeatureVectors() {
     const model_id = model_select[model_select.selectedIndex].value;
 
+    const features = await server.getFeatureVectors(model_id);
+    console.log(features);
+
+    /*
     let image_ids = [];
     const image_sets = await server.getImageSets();
     for (let image_set of image_sets) {
         const image_ids_in_set = await server.getImageIds(image_set);
+        let i = 0;
         for (let image_id of image_ids_in_set) {
-            image_id[1] = image_id[1].toISOString();
+            if (i > 3) break;
+            i++;
+            //image_id[1] = image_id[1].toISOString();
 
             const feature_vector = await server.getFeatureVector(model_id, image_set, image_id, 0);
             console.log(feature_vector);
         }
     }
+    */
 }
 
 

@@ -67,12 +67,24 @@ export class MLServer extends idb.Accessor {
         );
         return result;
     }
-    async getFeatureVectors(model_id) {
+    async getFeatureVectorsJson(model_id) {
         const prefix = [INFERENCE, model_id];
         let [success, result, content_type] = await this.get_json(prefix);
         console.log(result);
         let feature_vectors = idb.flattenToLists(result);
         return feature_vectors;
+    }
+    async getFeatureVectors(model_id) {
+        let [success, result, content_type] = await this.execute_query(
+            [INTERFACE, "get_feature_vectors"],
+            {
+                "_model_id": model_id
+            }
+        );
+        const feature_ids = idb.flattenToLists(result["_feature_id"]);
+        let features = idb.flattenToLists(result["_features"]);
+        features = features.map((feature_str) => feature_str.split(" "));
+        return feature_ids, features;
     }
     async getFeatureVector(model_id, image_set, image_id, clip_num) {
         let [success, result, content_type] = await this.execute_query(
@@ -81,7 +93,7 @@ export class MLServer extends idb.Accessor {
                 "_model_id": model_id,
                 "_image_set": image_set,
                 "_image_id": image_id,
-                "_clip_num": clip_num
+                "_clip_num": new idb.Long(clip_num)
             }
         )
         //const features = result["_features"];

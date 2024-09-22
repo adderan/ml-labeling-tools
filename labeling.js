@@ -566,29 +566,3 @@ image_upload_button.addEventListener('click',
 
 
 
-async function setLoginStatus() {
-    let connection_status = document.getElementById("connection_status");
-    let login_button = document.getElementById("login");
-    let success = false;
-    if (server) {
-        success = await server.head();
-    }
-
-    if (success) {
-        connection_status.innerHTML = `Connected to ${server.server_url}`;
-        login_button.onclick = logoutServer;
-        login_button.innerHTML = 'Logout';
-    }
-    else {
-        if (server) {
-            //server exists but couldn't connect
-            connection_status.innerHTML = `Login failed with status ${server_status}`;
-        }
-        connection_status.innerHTML = "Not logged in.";
-        login_button.onclick = show_loginpane;
-        login_button.innerHTML = "Login";
-    }
-
-}
-
-

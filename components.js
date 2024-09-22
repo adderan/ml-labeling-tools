@@ -17,7 +17,6 @@ export class NavBar extends HTMLElement {
             ["inference.html", "Inference"]
         ];
         for (let [link, name] of this.linknames) {
-            console.log(link, name);
             const li = document.createElement("li");
             const a = document.createElement("a");
             a.setAttribute("href", link);
@@ -57,11 +56,23 @@ export class NavBar extends HTMLElement {
 
     }
 
-    updateConnectionStatus() {
+    async updateConnectionStatus() {
+        if (this.server.server_url == null) {
+            this.connection_status.innerHTML = "Not connected to server.";
+            return;
+        }
+
+        let success = await this.server.head();
+
+        let success_message = `<strong style="color:red">Failed to connect</strong>`;
+        if(success) {
+            success_message = `<strong style="color:green">Successfully connected</strong>`;
+        }
+        
         const full_server_url = 
             this.server.server_url + "/infinitydb/data/";
         this.connection_status.innerHTML = `
-            Connected to database <strong>${this.server.db}</strong> on <a style="all:revert" href="${full_server_url}">${this.server.server_url}</a> as user <strong>${this.server.username}</strong>.
+            ${success_message} to database <strong>${this.server.db}</strong> on <a style="all:revert" href="${full_server_url}">${this.server.server_url}</a> as user <strong>${this.server.username}</strong>.
         `;
     }
 }
