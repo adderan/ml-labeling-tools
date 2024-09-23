@@ -67,13 +67,6 @@ export class MLServer extends idb.Accessor {
         );
         return result;
     }
-    async getFeatureVectorsJson(model_id) {
-        const prefix = [INFERENCE, model_id];
-        let [success, result, content_type] = await this.get_json(prefix);
-        console.log(result);
-        let feature_vectors = idb.flattenToLists(result);
-        return feature_vectors;
-    }
     async getFeatureVectors(model_id) {
         let [success, result, content_type] = await this.execute_query(
             [INTERFACE, "get_feature_vectors"],
@@ -81,10 +74,37 @@ export class MLServer extends idb.Accessor {
                 "_model_id": model_id
             }
         );
-        const feature_ids = idb.flattenToLists(result["_feature_id"]);
-        let features = idb.flattenToLists(result["_features"]);
-        features = features.map((feature_str) => feature_str.split(" "));
-        return feature_ids, features;
+        
+        const features = [];
+        result = idb.flattenToLists(result);
+        for (let info of result) {
+            let image_set, mac, date, image_num, clip_num, clip_features, label;
+            if (info.length == 7) {
+                [image_set, mac, date, image_num, clip_num, clip_features, label] = info;
+            }
+            else if (info.length == 6) {
+                [image_set, mac, date, clip_num, clip_features, label] = info;
+            }
+            if (typeof(label) == "undefined") {
+                continue;
+            }
+            clip_features = clip_features.split(" ");
+            label = label.split(" ");
+
+            features.push({
+                model_id: model_id,
+                image_set: image_set,
+                image_id: [mac, date, image_num],
+                clip_num: clip_num,
+                feature_x: parseFloat(clip_features[0]),
+                feature_y: parseFloat(clip_features[1]),
+                label: label,
+                class_id: parseInt(label[4])
+            });
+
+        }
+
+        return features;
     }
     async getFeatureVector(model_id, image_set, image_id, clip_num) {
         let [success, result, content_type] = await this.execute_query(
@@ -103,8 +123,6 @@ export class MLServer extends idb.Accessor {
     }
     async setLabel(label_set, image_set, image_id, label) {
         //image_id = idb.unflattenFromLists(image_id.slice(1));
-        console.log(image_set);
-        console.log(image_id);
         label = [
             label.classname, 
             Math.round(label.xmin), 
