@@ -27,23 +27,45 @@ class ClipPreviewBox extends HTMLElement {
         if (this.clip == null) return;
         this.dialog = document.createElement("dialog");
         this.appendChild(this.dialog);
-        this.image_set_label = document.createElement("label");
-        this.image_set_label.innerText = this.clip.image_set;
-        this.dialog.appendChild(this.image_set_label);
+
+        this.image = document.createElement("img");
+        this.dialog.appendChild(this.image);
+
+        this.info = document.createElement("p");
+        this.info.innerHTML = `
+            <p>Image set: ${this.clip.image_set}</p>
+            <p>Class ID: ${this.clip.class_id}</p>
+        `;
+        this.dialog.appendChild(this.info);
+
+
 
         this.classList.add("clip-preview-box");
         const style = document.createElement("style");
         style.innerHTML = `
             .clip-preview-box {
+                position: absolute;
+                left: ${this.x}px;
+                top: ${this.y}px;
+
                 dialog {
-                    position: absolute;
-                    left: ${this.x}px;
-                    top: ${this.y}px;
+                    width: 20rem;
+                }
+                img {
+                    width: 18rem;
                 }
             }
         `;
         this.appendChild(style);
         this.dialog.show();
+
+        let image_data_ = server.getImage(this.clip.image_set, this.clip.image_id);
+        image_data_.then(
+            (image_data) => {
+                const image_url = URL.createObjectURL(image_data);
+                this.image.src = image_url;
+            }
+        );
 
     }
 
@@ -75,7 +97,7 @@ class ClusterEditor extends HTMLElement {
                 }
             }
         `;
-        //this.appendChild(style);
+        this.appendChild(style);
 
         this.canvas.addEventListener('click', this);
         this.preview_box = null;
@@ -97,8 +119,8 @@ class ClusterEditor extends HTMLElement {
             this.preview_box = document.createElement("clip-preview-box");
             this.preview_box.server = server;
             this.preview_box.clip = clip;
-            this.preview_box.x = event.offsetX;
-            this.preview_box.y = event.offsetY;
+            this.preview_box.x = this.canvas.offsetLeft + event.offsetX;
+            this.preview_box.y = this.canvas.offsetTop + event.offsetY;
             this.appendChild(this.preview_box);
         }
     }

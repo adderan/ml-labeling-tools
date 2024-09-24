@@ -79,6 +79,7 @@ export class MLServer extends idb.Accessor {
         result = idb.flattenToLists(result);
         for (let info of result) {
             let image_set, mac, date, image_num, clip_num, clip_features, label;
+            image_num = null;
             if (info.length == 7) {
                 [image_set, mac, date, image_num, clip_num, clip_features, label] = info;
             }
@@ -90,11 +91,13 @@ export class MLServer extends idb.Accessor {
             }
             clip_features = clip_features.split(" ");
             label = label.split(" ");
+            const image_id = [mac, date];
+            if (image_num != null) image_id.push(image_num);
 
             features.push({
                 model_id: model_id,
                 image_set: image_set,
-                image_id: [mac, date, image_num],
+                image_id: image_id,
                 clip_num: clip_num,
                 feature_x: parseFloat(clip_features[0]),
                 feature_y: parseFloat(clip_features[1]),
