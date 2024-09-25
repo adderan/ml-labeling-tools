@@ -78,11 +78,11 @@ class ClusterEditor extends HTMLElement {
         this.appendChild(this.canvas);
         this.samples = [];
 
-        this.size = 1000;
-        this.canvas.height = this.size;
-        this.canvas.width = this.size;
+        //this.size = 1000;
+        this.canvas.height = window.innerHeight;
+        this.canvas.width = window.innerWidth;
 
-        this.point_size = 4;
+        this.point_size = 6;
 
         this.ctx = this.canvas.getContext("2d");
 
@@ -114,6 +114,7 @@ class ClusterEditor extends HTMLElement {
 
             //if the pixel is (0,0,0), don't display anything
             if (!pixel.some((p_i) => p_i > 0)) return;
+            console.log("Searching for annotations near:", event.offsetX, event.offsetY);
 
             const clip = this.findNearestAnnotation(event.offsetX, event.offsetY);
             this.preview_box = document.createElement("clip-preview-box");
@@ -156,7 +157,7 @@ class ClusterEditor extends HTMLElement {
         return `${x} ${y}`;
     }
 
-    //dfs to find the nearest annotation to pixel (x, y)
+    //bfs to find the nearest annotation to pixel (x, y)
     findNearestAnnotation(start_x, start_y) {
         
         const stack = [];
@@ -165,7 +166,12 @@ class ClusterEditor extends HTMLElement {
         seen.add(this.encodePixel(start_x, start_y));
         let x, y;
         while (stack.length > 0) {
-            if (stack.length > 1000) break;
+            if (stack.length > 1000) {
+                //this should not happen, since the length of the stack is proportional
+                //to the distance from the click.
+                console.log("Aborting search for nearby annotation.");
+                break;
+            }
             const pixel = stack.shift();
             [x,y] = pixel;
 
@@ -174,14 +180,24 @@ class ClusterEditor extends HTMLElement {
                 return this.annotations[xy_str];
             }
 
-            const adj = [[x-1,y], [x+1,y], [x,y-1], [x,y+1]];
+            const adj = [
+                [x-1,y], 
+                [x+1,y], 
+                [x,y-1], 
+                [x,y+1], 
+                [x-1,y-1], 
+                [x+1,y+1],
+                [x-1,y+1],
+                [x+1,y-1]
+            ];
 
             for (let [adj_x, adj_y] of adj) {
                 if ((adj_x < 0) || (adj_x > this.canvas.width) || (adj_y < 0) || (adj_y > this.canvas.height)) {
                     continue;
                 }
                 const adj_str = this.encodePixel(adj_x, adj_y);
-                if (adj_str in seen) continue;
+                if (seen.has(adj_str)) continue;
+
                 stack.push([adj_x, adj_y]);
                 seen.add(adj_str);
             }
@@ -192,12 +208,13 @@ class ClusterEditor extends HTMLElement {
     }
 
     draw() {
+        this.ctx.globalAlpha = 0.6;
         this.annotations = {};
         for (let sample of this.samples) {
-            this.ctx.fillStyle = this.color_map[sample.class_id];
-            //this.ctx.fillStyle = this.image_set_color_map[sample.image_set];
-            const center_x = Math.round(sample.feature_x * this.size);
-            const center_y = Math.round(sample.feature_y * this.size);
+            //this.ctx.fillStyle = this.color_map[sample.class_id];
+            this.ctx.fillStyle = this.image_set_color_map[sample.image_set];
+            const center_x = Math.round(sample.feature_x * this.canvas.width);
+            const center_y = Math.round(sample.feature_y * this.canvas.height);
             this.ctx.beginPath();
             this.ctx.arc(
                 center_x,
